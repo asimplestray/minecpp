@@ -1,0 +1,12 @@
+# Warnings portateis. Incluir depois de project().
+if(MSVC)
+  add_compile_options(/W4)
+  if(MINECPP_WARNINGS_AS_ERRORS)
+    add_compile_options(/WX)
+  endif()
+else()
+  add_compile_options(-Wall -Wextra -Wpedantic)
+  if(MINECPP_WARNINGS_AS_ERRORS)
+    add_compile_options(-Werror)
+  endif()
+endif()

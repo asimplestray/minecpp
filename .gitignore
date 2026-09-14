@@ -1,0 +1,44 @@
+# Build directories
+build/
+cmake-build-*/
+
+# CMake files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+compile_commands.json
+CTestTestfile.cmake
+Makefile
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Minecraft/Mojang assets - DO NOT COMMIT
+server-*.jar
+*.jar
+
+# Test data with vanilla Minecraft content
+test-data/vanilla-*/
+
+# Version-specific generated assets (if any)
+versions/*/assets/
+versions/*/data/
+
+# Logs
+*.log
+
+# Compiled objects
+*.o
+*.obj
+*.so
+*.dll
+*.dylib
+*.exe
