@@ -18,6 +18,7 @@
 
 #include "minecpp/core/mqueue.h"
 #include "minecpp/v1_8/protocol.h"
+#include "minecpp/v1_8/physics.h"
 
 namespace minecpp::v18 {
 
@@ -103,6 +104,11 @@ struct Entity {
   bool dead = false;
   std::unordered_set<uint32_t> seen_by;  // conns com spawn enviado
   double sx = 0, sy = 0, sz = 0;  // último teleporte
+  // Physics state
+  bool on_ground = false;
+  bool in_water = false;
+  bool in_lava = false;
+  bool on_ladder = false;
 };
 
 // Mundo server-side (dono tick): chunks adotados dos jobs. Sem save ainda —
@@ -249,6 +255,16 @@ class Server {
   void HandleTabComplete(Player &p, const proto::SbTabComplete &t);
   void HandleResourcePackStatus(Player &p, const proto::ResourcePackStatus &r);
 
+  // ---- Physics (Fase 3) ----
+  physics::CollisionResult StepEntityPhysics(Entity &e, const Chunk *chunk, double dt = 0.05);
+  physics::CollisionResult StepPlayerPhysics(Player &p, const Chunk *chunk,
+                                             double move_x, double move_z,
+                                             bool jump, bool sprint, bool sneak);
+  bool ValidatePlayerMovement(Player &p, const physics::PhysicsState &old_state,
+                              const physics::PhysicsState &new_state);
+  physics::ExplosionResult CreateExplosionAt(double x, double y, double z, float power);
+  void ApplyExplosionToEntity(Entity &e, const physics::ExplosionResult &explosion);
+
   std::string StatusJson() const;
 
   ServerConfig cfg_;
@@ -258,6 +274,7 @@ class Server {
   std::unordered_map<int32_t, std::unique_ptr<Entity>> entities_;
   uint64_t rng_ = 0x9E3779B97F4A7C15ull;
   World world_;
+  std::unique_ptr<physics::PhysicsEngine> physics_engine_;
   int32_t spawn_x_ = 8, spawn_y_ = 4, spawn_z_ = 8;
   int64_t world_time_ = 0;
   int32_t next_eid_ = 1;

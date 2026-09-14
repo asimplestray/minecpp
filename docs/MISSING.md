@@ -162,7 +162,7 @@
 
 ---
 
-## Funções Server.cpp — **TODAS IMPLEMENTADAS (P0+P1+P2)**
+## Funções Server.cpp — **TODAS IMPLEMENTADAS (P0+P1+P2+F3)**
 
 ### Broadcast / Envio
 - ✅ `SendUpdateHealth(Player&, float, int, float)`
@@ -213,58 +213,20 @@
 - ✅ `HandleTabComplete(Player&, SbTabComplete)` — P2
 - ✅ `HandleResourcePackStatus(Player&, ResourcePackStatus)` — P2
 
----
-
-## Fase 2: Worldgen — **100% COMPLETO** ✅
-
-### Java-compatible RNG
-- ✅ `JavaRandom` class (java.util.Random compatible: nextLong, nextInt, nextDouble, nextFloat, nextBoolean)
-- ✅ Seed mixing: `(seed ^ 0x5DEECE66DL) & 0xFFFFFFFFFFFFL`
-
-### Biome Generation
-- ✅ 40 biomes implemented (vanilla 1.8 IDs 0-39)
-- ✅ Temperature/humidity noise-based biome selection
-- ✅ Biome settings: temperature, humidity, height variation, top/filler blocks, colors
-
-### Overworld (dimension 0)
-- ✅ Heightmap generation with multi-octave noise (continental, mountains, hills)
-- ✅ Sea level at Y=63
-- ✅ Bedrock at Y=0
-- ✅ Stone/dirt/grass layers
-- ✅ Biome-specific top blocks (sand, mycelium, etc.)
-- ✅ Cave carving (noise-based)
-- ✅ Ravine generation (rare)
-- ✅ Ore veins: coal, iron, gold, diamond, redstone, lapis
-- ✅ Water/lava lakes
-- ✅ Structures: village (well), temple (pyramid+chest), mineshaft (corridors), stronghold (portal room)
-
-### Nether (dimension -1)
-- ✅ Bedrock ceiling (Y=127) and floor (Y=0)
-- ✅ Netherrack terrain with noise-based height variation
-- ✅ Soul sand patches near lava level
-- ✅ Glowstone clusters on ceiling
-- ✅ Nether quartz ore veins
-- ✅ Lava seas (Y=30-35)
-- ✅ Nether fortress bridges (nether brick corridors)
-- ✅ Biome: Hell (ID 8)
-
-### End (dimension 1)
-- ✅ Central island (8x8 chunks) with end stone terrain
-- ✅ Obsidian pillars at center (0,0) with end crystals
-- ✅ Bedrock exit portal at center
-- ✅ Outer islands with end cities (purpur towers) and end ships
-- ✅ Chorus plants on outer islands
-- ✅ Biome: Sky (ID 9)
-
-### Chunk/Region Integration
-- ✅ `WorldGenerator` class with `GenerateChunk()`, `GenerateTerrain()`, `GenerateBiomes()`, `GenerateStructures()`
-- ✅ `worldgen::GenerateChunk(cx, cz, seed, chunk)` for chunk jobs
-- ✅ `worldgen::GenerateNetherChunk(cx, cz, seed, chunk)` for Nether
-- ✅ `worldgen::GenerateEndChunk(cx, cz, seed, chunk)` for End
-- ✅ `ChunkJobMain` falls back to dimension-aware worldgen when region file missing
-- ✅ Player tracks `dimension` field (0=overworld, -1=nether, 1=end)
-- ✅ `JoinGame` packet sends correct dimension
-- ✅ `ClientStatus` respawn keeps current dimension
+### Physics (Fase 3) — **IMPLEMENTADO** ✅
+- ✅ `PhysicsEngine` class com AABB collision detection
+- ✅ `StepEntityPhysics()` — física para entidades (itens, mobs)
+- ✅ `StepPlayerPhysics()` — física para jogadores com input
+- ✅ `ValidatePlayerMovement()` — anti-cheat movement validation
+- ✅ AABB collision com blocos sólidos
+- ✅ Gravidade (0.08/tick, terminal velocity 0.98)
+- ✅ Drag (0.98 horizontal, 0.98 vertical)
+- ✅ Water physics (buoyancy 0.02/tick, drag 0.9)
+- ✅ Lava physics (damage + drag 0.5)
+- ✅ Sneak edge protection
+- ✅ `CreateExplosionAt()` — explosões com raycast (TNT, creepers)
+- ✅ `ApplyExplosionToEntity()` — knockback de explosão
+- ✅ Integração com `EntityTick()` para itens e mobs
 
 ---
 
@@ -272,23 +234,56 @@
 
 P0 + P1 + P2 todos implementados com:
 - [x] Struct em `protocol.h`
-- [x] Encode/Decode em `protocol.cpp` (testado contra goldens se existirem)
-- [x] Handler SB em `server.cpp` (se aplicável)
+- [x] Encode/Decode em `protocol.cpp`
+- [x] Handler SB em `server.cpp`
 - [x] Função `SendX` / `HandleX` em `server.cpp` / `server.h`
 - [x] Handler cases em `Server::HandlePlay`
-- [x] Teste em `test_server18.cpp` (unitário, sem socket)
+- [x] Teste em `test_server18.cpp`
 - [x] Build Release + ASan limpo
 - [x] Cliente vanilla 1.8 conecta, vê HUD correto, joga survival básico
 
 ---
 
-## Próximos passos
+## Fase 2 (Worldgen) — **100% COMPLETO** ✅
 
-### Fase 3: Física autoritativa
-- [ ] AABB collision
-- [ ] Gravidade, água/lava physics
-- [ ] Anti-fly/anti-cheat
-- [ ] Explosions (TNT, creepers)
+### Java-compatible RNG
+- ✅ `JavaRandom` class (java.util.Random compatible)
+- ✅ Seed mixing: `(seed ^ 0x5DEECE66DL) & 0xFFFFFFFFFFFFL`
+
+### Overworld (dimension 0)
+- ✅ 40 biomas com temperature/humidity noise
+- ✅ Heightmap multi-octave (continental, mountains, hills)
+- ✅ Bedrock Y=0, stone/dirt/grass layers, biome top blocks
+- ✅ Caves, ravines, 6 minérios, water/lava lakes
+- ✅ Estruturas: village, temple, mineshaft, stronghold
+
+### Nether (dimension -1)
+- ✅ Bedrock roof/floor, netherrack, soul sand, glowstone, quartz
+- ✅ Lava seas, fortress bridges
+
+### End (dimension 1)
+- ✅ Central island, obsidian pillars, end portal
+- ✅ Outer islands with end cities, end ships, chorus plants
+
+### Chunk/Region Integration
+- ✅ `WorldGenerator` class, dimension-aware chunk jobs
+- ✅ Fallback generation when region file missing
+
+---
+
+## Fase 3 (Physics) — **IMPLEMENTADO** ✅
+
+- ✅ AABB collision detection
+- ✅ Gravity + drag + terminal velocity
+- ✅ Water/lava physics (buoyancy, drag, damage)
+- ✅ Player movement validation (anti-cheat)
+- ✅ Explosions with raycast + knockback
+- ✅ EntityTick integration
+- ✅ Edge protection (sneak)
+
+---
+
+## Próximos passos
 
 ### Fase 4: ~200 blocos
 - [ ] Redstone, pistões, fornalha, portas, trilhos

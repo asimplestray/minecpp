@@ -3087,4 +3087,107 @@ void ChunkJobMain(void *arg) {
   minecpp_mqueue_push(job->reply, m);  // SEMPRE responde (destrava inflight)
 }
 
+
+
+// ---- Physics (Fase 3) ----
+
+minecpp::v18::physics::CollisionResult Server::StepEntityPhysics(minecpp::v18::Entity &e, const Chunk *chunk, double dt) {
+  if (!physics_engine_) {
+    physics_engine_ = std::make_unique<minecpp::v18::physics::PhysicsEngine>(chunk);
+  } else {
+    physics_engine_ = std::make_unique<minecpp::v18::physics::PhysicsEngine>(chunk);
+  }
+
+  minecpp::v18::physics::AABB box = minecpp::v18::physics::EntityPhysics::GetMobAABB(e.mob_type, e.x, e.y, e.z);
+  minecpp::v18::physics::PhysicsState state;
+  state.x = e.x;
+  state.y = e.y;
+  state.z = e.z;
+  state.vx = e.vx;
+  state.vy = e.vy;
+  state.vz = e.vz;
+  state.on_ground = e.on_ground;
+  state.in_water = e.in_water;
+  state.in_lava = e.in_lava;
+  state.on_ladder = e.on_ladder;
+
+  minecpp::v18::physics::CollisionResult result = physics_engine_->Step(box, state, dt);
+
+  e.x = result.x;
+  e.y = result.y;
+  e.z = result.z;
+  e.vx = result.vx;
+  e.vy = result.vy;
+  e.vz = result.vz;
+  e.on_ground = result.on_ground;
+  e.in_water = result.in_water;
+  e.in_lava = result.in_lava;
+
+  return result;
+}
+
+minecpp::v18::physics::CollisionResult Server::StepPlayerPhysics(minecpp::v18::Player &p, const Chunk *chunk,
+                                                   double move_x, double move_z,
+                                                   bool jump, bool sprint, bool sneak) {
+  if (!physics_engine_) {
+    physics_engine_ = std::make_unique<minecpp::v18::physics::PhysicsEngine>(chunk);
+  } else {
+    physics_engine_ = std::make_unique<minecpp::v18::physics::PhysicsEngine>(chunk);
+  }
+
+  minecpp::v18::physics::AABB box(-minecpp::v18::physics::EntityPhysics::kPlayerWidth, 0, -minecpp::v18::physics::EntityPhysics::kPlayerWidth,
+                    minecpp::v18::physics::EntityPhysics::kPlayerWidth, minecpp::v18::physics::EntityPhysics::kPlayerHeight,
+                    minecpp::v18::physics::EntityPhysics::kPlayerWidth);
+  box = box.Offset(p.x, p.y, p.z);
+
+  minecpp::v18::physics::PhysicsState state;
+  state.x = p.x;
+  state.y = p.y;
+  state.z = p.z;
+  state.vx = 0;
+  state.vy = 0;
+  state.vz = 0;
+  state.on_ground = p.on_ground;
+  state.in_water = false;
+  state.in_lava = false;
+  state.on_ladder = false;
+
+  minecpp::v18::physics::CollisionResult result = physics_engine_->StepPlayer(box, state, move_x, move_z, jump, sprint, sneak);
+
+  return result;
+}
+
+bool Server::ValidatePlayerMovement(minecpp::v18::Player &, const minecpp::v18::physics::PhysicsState &old_state,
+                                    const minecpp::v18::physics::PhysicsState &new_state) {
+  if (!physics_engine_) return true;
+  return physics_engine_->ValidateMovement(old_state, new_state, 0.3, false);
+}
+
+minecpp::v18::physics::ExplosionResult Server::CreateExplosionAt(double x, double y, double z, float power) {
+  int cx = FloorDiv16((int32_t)x);
+  int cz = FloorDiv16((int32_t)z);
+  Chunk *chunk = world_.Get(cx, cz);
+
+  return minecpp::v18::physics::CreateExplosion(chunk, x, y, z, power, true, true);
+}
+
+void Server::ApplyExplosionToEntity(minecpp::v18::Entity &e, const minecpp::v18::physics::ExplosionResult &explosion) {
+  minecpp::v18::physics::AABB box = minecpp::v18::physics::EntityPhysics::GetMobAABB(e.mob_type, e.x, e.y, e.z);
+  minecpp::v18::physics::PhysicsState state;
+  state.x = e.x;
+  state.y = e.y;
+  state.z = e.z;
+  state.vx = e.vx;
+  state.vy = e.vy;
+  state.vz = e.vz;
+
+  minecpp::v18::physics::ApplyExplosionKnockback(&state, explosion, box);
+
+  e.vx = state.vx;
+  e.vy = state.vy;
+  e.vz = state.vz;
+
+  SendEntityVelocity(e);
+}
+
 }  // namespace minecpp::v18
