@@ -107,6 +107,31 @@ enum : int32_t {
   kCbCloseWindow = 0x2E,
   kCbWindowProp = 0x31,
   kCbConfirmTxn = 0x32,
+  // Play CB P1 faltando
+  kCbRespawn = 0x07,
+  kCbUseBed = 0x0A,
+  kCbSpawnPainting = 0x10,
+  kCbAttachEntity = 0x1B,
+  kCbEntityEffect = 0x1D,
+  kCbRemoveEntityEffect = 0x1E,
+  kCbEntityRelMove0 = 0x14,
+  kCbMultiBlockChange = 0x22,
+  kCbExplosion = 0x27,
+  kCbParticle = 0x2A,
+  kCbChangeGameState = 0x2B,
+  kCbSpawnGlobalEntity = 0x2C,
+  kCbUpdateSign = 0x33,
+  kCbUpdateBlockEntity = 0x35,
+  kCbSignEditorOpen = 0x36,
+  kCbCombatEvent = 0x42,
+  // Play SB P1 faltando
+  kSbEntityAction = 0x0B,
+  kSbSteerVehicle = 0x0C,
+  kSbEnchantItem = 0x11,
+  kSbUpdateSign = 0x12,
+  kSbPlayerAbilities = 0x13,
+  kSbClientSettings = 0x15,
+  kSbClientStatus = 0x16,
 };
 
 struct Handshake {
@@ -523,6 +548,154 @@ struct Properties {
   std::vector<Property> props;
 };
 
+// ---- P1 faltando: Clientbound ----
+
+struct Respawn {
+  int32_t dimension = 0;
+  uint8_t difficulty = 0;
+  uint8_t gamemode = 0;
+  std::string level_type;
+};
+
+struct UseBed {
+  int32_t eid = 0;
+  int32_t x = 0, y = 0, z = 0;
+};
+
+struct SpawnPainting {
+  int32_t eid = 0;
+  std::string title;
+  int32_t x = 0, y = 0, z = 0;
+  uint8_t direction = 0;
+};
+
+struct AttachEntity {
+  int32_t vehicle = 0;
+  int32_t rider = 0;
+  bool leash = false;
+};
+
+struct EntityEffect {
+  int32_t eid = 0;
+  uint8_t effect_id = 0;
+  uint8_t amplifier = 0;
+  int32_t duration = 0;
+  bool hide_particles = false;
+};
+
+struct RemoveEntityEffect {
+  int32_t eid = 0;
+  uint8_t effect_id = 0;
+};
+
+struct EntityRelMove0 {
+  int32_t eid = 0;
+};
+
+struct MultiBlockChange {
+  int32_t chunk_x = 0, chunk_z = 0;
+  struct Record {
+    uint16_t packed = 0;  // (x<<12)|(z<<8)|y
+    int32_t block_id = 0;
+  };
+  std::vector<Record> records;
+};
+
+struct Explosion {
+  float x = 0, y = 0, z = 0;
+  float strength = 0;
+  struct Offset {
+    int8_t dx = 0, dy = 0, dz = 0;
+  };
+  std::vector<Offset> records;
+  float player_motion_x = 0, player_motion_y = 0, player_motion_z = 0;
+};
+
+struct Particle {
+  int32_t id = 0;
+  bool long_distance = false;
+  float x = 0, y = 0, z = 0;
+  float ox = 0, oy = 0, oz = 0;
+  float speed = 0;
+  int32_t count = 0;
+  std::vector<int32_t> data;  // opcional, depende do id
+};
+
+struct ChangeGameState {
+  uint8_t reason = 0;  // 0=no respawn, 1=end raining, 2=begin raining, 3=gamemode, 4=win, 5=demo, 6=arrow hit
+  float value = 0;
+};
+
+struct SpawnGlobalEntity {
+  int32_t eid = 0;
+  uint8_t type = 0;  // 1=lightning
+  int32_t x = 0, y = 0, z = 0;
+};
+
+struct UpdateSign {
+  int32_t x = 0, y = 0, z = 0;
+  std::string lines[4];
+};
+
+struct UpdateBlockEntity {
+  int32_t x = 0, y = 0, z = 0;
+  uint8_t action = 0;
+  minecpp_nbt_tag_t *nbt = nullptr;
+};
+
+struct SignEditorOpen {
+  int32_t x = 0, y = 0, z = 0;
+};
+
+struct CombatEvent {
+  int32_t event = 0;  // 0=enter combat, 1=end combat, 2=entity dead
+  int32_t duration = 0;
+  int32_t entity_id = 0;
+  int32_t player_id = 0;
+  std::string death_message;
+};
+
+// ---- P1 faltando: Serverbound ----
+
+struct EntityAction {
+  int32_t eid = 0;
+  int32_t action = 0;  // 1=sneak, 2=unsneak, 3=leave bed, 4=sprint, 5=unsprint, 6=jump horse
+  int32_t jump_boost = 0;
+};
+
+struct SteerVehicle {
+  float sideways = 0, forward = 0;
+  uint8_t flags = 0;  // 0x1=jump, 0x2=unmount
+};
+
+struct EnchantItem {
+  uint8_t window = 0;
+  uint8_t enchantment = 0;
+};
+
+struct SbUpdateSign {
+  int32_t x = 0, y = 0, z = 0;
+  std::string lines[4];
+};
+
+struct SbPlayerAbilities {
+  uint8_t flags = 0;
+  float fly_speed = 0, walk_speed = 0;
+};
+
+struct ClientSettings {
+  std::string locale;
+  uint8_t view_distance = 0;
+  int32_t chat_mode = 0;
+  bool chat_colors = false;
+  uint8_t skin_parts = 0;
+  int32_t main_hand = 0;  // 0=left, 1=right (1.9+)
+};
+
+struct ClientStatus {
+  int32_t action = 0;  // 0=respawn, 1=request stats, 2=taking inventory achievement
+};
+
 bool Encode(const Handshake &, minecpp_writer_t *);
 bool Decode(Handshake &, minecpp_reader_t *);
 bool Encode(const StatusResponse &, minecpp_writer_t *);
@@ -649,6 +822,56 @@ bool Encode(const Metadata &, minecpp_writer_t *);
 bool Decode(Metadata &, minecpp_reader_t *);
 bool Encode(const Properties &, minecpp_writer_t *);
 bool Decode(Properties &, minecpp_reader_t *);
+
+// P1 faltando: Clientbound encode/decode
+bool Encode(const Respawn &, minecpp_writer_t *);
+bool Decode(Respawn &, minecpp_reader_t *);
+bool Encode(const UseBed &, minecpp_writer_t *);
+bool Decode(UseBed &, minecpp_reader_t *);
+bool Encode(const SpawnPainting &, minecpp_writer_t *);
+bool Decode(SpawnPainting &, minecpp_reader_t *);
+bool Encode(const AttachEntity &, minecpp_writer_t *);
+bool Decode(AttachEntity &, minecpp_reader_t *);
+bool Encode(const EntityEffect &, minecpp_writer_t *);
+bool Decode(EntityEffect &, minecpp_reader_t *);
+bool Encode(const RemoveEntityEffect &, minecpp_writer_t *);
+bool Decode(RemoveEntityEffect &, minecpp_reader_t *);
+bool Encode(const EntityRelMove0 &, minecpp_writer_t *);
+bool Decode(EntityRelMove0 &, minecpp_reader_t *);
+bool Encode(const MultiBlockChange &, minecpp_writer_t *);
+bool Decode(MultiBlockChange &, minecpp_reader_t *);
+bool Encode(const Explosion &, minecpp_writer_t *);
+bool Decode(Explosion &, minecpp_reader_t *);
+bool Encode(const Particle &, minecpp_writer_t *);
+bool Decode(Particle &, minecpp_reader_t *);
+bool Encode(const ChangeGameState &, minecpp_writer_t *);
+bool Decode(ChangeGameState &, minecpp_reader_t *);
+bool Encode(const SpawnGlobalEntity &, minecpp_writer_t *);
+bool Decode(SpawnGlobalEntity &, minecpp_reader_t *);
+bool Encode(const UpdateSign &, minecpp_writer_t *);
+bool Decode(UpdateSign &, minecpp_reader_t *);
+bool Encode(const UpdateBlockEntity &, minecpp_writer_t *);
+bool Decode(UpdateBlockEntity &, minecpp_reader_t *);
+bool Encode(const SignEditorOpen &, minecpp_writer_t *);
+bool Decode(SignEditorOpen &, minecpp_reader_t *);
+bool Encode(const CombatEvent &, minecpp_writer_t *);
+bool Decode(CombatEvent &, minecpp_reader_t *);
+
+// P1 faltando: Serverbound encode/decode
+bool Encode(const EntityAction &, minecpp_writer_t *);
+bool Decode(EntityAction &, minecpp_reader_t *);
+bool Encode(const SteerVehicle &, minecpp_writer_t *);
+bool Decode(SteerVehicle &, minecpp_reader_t *);
+bool Encode(const EnchantItem &, minecpp_writer_t *);
+bool Decode(EnchantItem &, minecpp_reader_t *);
+bool Encode(const SbUpdateSign &, minecpp_writer_t *);
+bool Decode(SbUpdateSign &, minecpp_reader_t *);
+bool Encode(const SbPlayerAbilities &, minecpp_writer_t *);
+bool Decode(SbPlayerAbilities &, minecpp_reader_t *);
+bool Encode(const ClientSettings &, minecpp_writer_t *);
+bool Decode(ClientSettings &, minecpp_reader_t *);
+bool Encode(const ClientStatus &, minecpp_writer_t *);
+bool Decode(ClientStatus &, minecpp_reader_t *);
 
 // Frame sem compressão: varint(len) + varint(id) + payload.
 // Unframe valida teto e devolve id + view do payload (sem cópia).

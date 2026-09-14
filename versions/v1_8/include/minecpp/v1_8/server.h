@@ -187,13 +187,50 @@ class Server {
   void HandleStatus(Player &p, int32_t id, const uint8_t *d, size_t n);
   void HandleLogin(Player &p, int32_t id, const uint8_t *d, size_t n);
   void HandlePlay(Player &p, int32_t id, const uint8_t *d, size_t n);
-  // ---- entidades (P1c) broadcast helpers ----
+// ---- entidades (P1c) broadcast helpers ----
   void HandleUseEntity(Player &p, const proto::UseEntity &u);
   void SendEntityMetadata(const Entity &e);
   void SendEntityVelocity(const Entity &e);
   void SendEntityEquipment(const Entity &e, int32_t slot, const proto::Slot &item);
   void SendEntityStatus(const Entity &e, uint8_t status);
   void SendPlayerHeadLook(const Player &p);
+  // ---- P1 faltando: handlers ----
+  void SendHeldItemChange(Player &p, uint8_t slot);
+  void SendSetExperience(Player &p, float bar, int level, int total);
+  void SendRespawn(Player &p, int32_t dimension, uint8_t difficulty, uint8_t gamemode, const std::string &level_type);
+  void SendUseBed(Entity &e, int32_t x, int32_t y, int32_t z);
+  void SendSpawnPainting(Entity &e, const std::string &title, int32_t x, int32_t y, int32_t z, uint8_t direction);
+  void SendSpawnExpOrb(Entity &e, int32_t x, int32_t y, int32_t z, int32_t count);
+  void SendEntityRelMove(Entity &e, int8_t dx, int8_t dy, int8_t dz, bool on_ground);
+  void SendAttachEntity(int32_t vehicle, int32_t rider, bool leash);
+  void SendEntityEffect(Entity &e, uint8_t effect_id, uint8_t amplifier, int32_t duration, bool hide_particles);
+  void SendRemoveEntityEffect(Entity &e, uint8_t effect_id);
+  void SendMultiBlockChange(int32_t cx, int32_t cz, const std::vector<proto::MultiBlockChange::Record> &records);
+  void SendExplosion(float x, float y, float z, float strength, const std::vector<proto::Explosion::Offset> &records,
+                     float px, float py, float pz);
+  void SendParticle(int32_t id, bool long_distance, float x, float y, float z, float ox, float oy, float oz,
+                    float speed, int32_t count, const std::vector<int32_t> &data);
+  void SendChangeGameState(uint8_t reason, float value);
+  void SendSpawnGlobalEntity(int32_t eid, uint8_t type, int32_t x, int32_t y, int32_t z);
+  void SendOpenWindow(uint8_t window, const std::string &type, const std::string &title, uint8_t slots);
+  void SendCloseWindow(uint8_t window);
+  void SendWindowProperty(uint8_t window, int16_t prop, int16_t value);
+  void SendUpdateSign(int32_t x, int32_t y, int32_t z, const std::string lines[4]);
+  void SendUpdateBlockEntity(int32_t x, int32_t y, int32_t z, uint8_t action);
+  void SendSignEditorOpen(int32_t x, int32_t y, int32_t z);
+  void SendCombatEvent(int32_t event, int32_t duration, int32_t entity_id, int32_t player_id, const std::string &death_message);
+  // SB handlers P1 faltando
+  void HandleHeldItemChange(Player &p, const proto::SbHeldItem &h);
+  void HandleEntityAction(Player &p, const proto::EntityAction &a);
+  void HandleSteerVehicle(Player &p, const proto::SteerVehicle &s);
+  void HandleCloseWindow(Player &p, uint8_t window);
+  void HandleCreativeAction(Player &p, const proto::CreativeAction &c);
+  void HandleEnchantItem(Player &p, const proto::EnchantItem &e);
+  void HandleUpdateSign(Player &p, const proto::SbUpdateSign &s);
+  void HandleAbilities(Player &p, const proto::SbPlayerAbilities &a);
+  void HandleClientSettings(Player &p, const proto::ClientSettings &c);
+  void HandleClientStatus(Player &p, const proto::ClientStatus &c);
+
   std::string StatusJson() const;
 
   ServerConfig cfg_;

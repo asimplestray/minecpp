@@ -1613,4 +1613,463 @@ bool Decode(Properties &p, minecpp_reader_t *r) {
   return true;
 }
 
+// ---- P1 faltando: Clientbound encode/decode ----
+
+bool Encode(const Respawn &p, minecpp_writer_t *w) {
+  minecpp_wr_i32(w, p.dimension);
+  minecpp_wr_u8(w, p.difficulty);
+  minecpp_wr_u8(w, p.gamemode);
+  minecpp_wr_strn(w, p.level_type.data(), p.level_type.size());
+  return minecpp_wr_ok(w);
+}
+
+bool Decode(Respawn &p, minecpp_reader_t *r) {
+  if (minecpp_rd_i32(r, &p.dimension) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_u8(r, &p.difficulty) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_u8(r, &p.gamemode) != MINECPP_BUF_OK) return false;
+  char *s = nullptr;
+  if (minecpp_rd_string(r, 16, &s, nullptr) != MINECPP_BUF_OK) return false;
+  p.level_type = s;
+  free(s);
+  return true;
+}
+
+bool Encode(const UseBed &p, minecpp_writer_t *w) {
+  minecpp_wr_varint(w, p.eid);
+  minecpp_wr_i32(w, p.x);
+  minecpp_wr_i32(w, p.y);
+  minecpp_wr_i32(w, p.z);
+  return minecpp_wr_ok(w);
+}
+
+bool Decode(UseBed &p, minecpp_reader_t *r) {
+  if (minecpp_rd_varint(r, &p.eid) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_i32(r, &p.x) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_i32(r, &p.y) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_i32(r, &p.z) != MINECPP_BUF_OK) return false;
+  return true;
+}
+
+bool Encode(const SpawnPainting &p, minecpp_writer_t *w) {
+  minecpp_wr_varint(w, p.eid);
+  minecpp_wr_strn(w, p.title.data(), p.title.size());
+  minecpp_wr_i32(w, p.x);
+  minecpp_wr_i32(w, p.y);
+  minecpp_wr_i32(w, p.z);
+  minecpp_wr_u8(w, p.direction);
+  return minecpp_wr_ok(w);
+}
+
+bool Decode(SpawnPainting &p, minecpp_reader_t *r) {
+  if (minecpp_rd_varint(r, &p.eid) != MINECPP_BUF_OK) return false;
+  char *s = nullptr;
+  if (minecpp_rd_string(r, 13, &s, nullptr) != MINECPP_BUF_OK) return false;
+  p.title = s;
+  free(s);
+  if (minecpp_rd_i32(r, &p.x) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_i32(r, &p.y) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_i32(r, &p.z) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_u8(r, &p.direction) != MINECPP_BUF_OK) return false;
+  return true;
+}
+
+bool Encode(const AttachEntity &p, minecpp_writer_t *w) {
+  minecpp_wr_i32(w, p.vehicle);
+  minecpp_wr_i32(w, p.rider);
+  minecpp_wr_u8(w, p.leash ? 1 : 0);
+  return minecpp_wr_ok(w);
+}
+
+bool Decode(AttachEntity &p, minecpp_reader_t *r) {
+  if (minecpp_rd_i32(r, &p.vehicle) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_i32(r, &p.rider) != MINECPP_BUF_OK) return false;
+  uint8_t l = 0;
+  if (minecpp_rd_u8(r, &l) != MINECPP_BUF_OK) return false;
+  p.leash = (l != 0);
+  return true;
+}
+
+bool Encode(const EntityEffect &p, minecpp_writer_t *w) {
+  minecpp_wr_varint(w, p.eid);
+  minecpp_wr_u8(w, p.effect_id);
+  minecpp_wr_u8(w, p.amplifier);
+  minecpp_wr_varint(w, p.duration);
+  minecpp_wr_u8(w, p.hide_particles ? 1 : 0);
+  return minecpp_wr_ok(w);
+}
+
+bool Decode(EntityEffect &p, minecpp_reader_t *r) {
+  if (minecpp_rd_varint(r, &p.eid) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_u8(r, &p.effect_id) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_u8(r, &p.amplifier) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_varint(r, &p.duration) != MINECPP_BUF_OK) return false;
+  uint8_t h = 0;
+  if (minecpp_rd_u8(r, &h) != MINECPP_BUF_OK) return false;
+  p.hide_particles = (h != 0);
+  return true;
+}
+
+bool Encode(const RemoveEntityEffect &p, minecpp_writer_t *w) {
+  minecpp_wr_varint(w, p.eid);
+  minecpp_wr_u8(w, p.effect_id);
+  return minecpp_wr_ok(w);
+}
+
+bool Decode(RemoveEntityEffect &p, minecpp_reader_t *r) {
+  if (minecpp_rd_varint(r, &p.eid) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_u8(r, &p.effect_id) != MINECPP_BUF_OK) return false;
+  return true;
+}
+
+bool Encode(const EntityRelMove0 &p, minecpp_writer_t *w) {
+  minecpp_wr_varint(w, p.eid);
+  return minecpp_wr_ok(w);
+}
+
+bool Decode(EntityRelMove0 &p, minecpp_reader_t *r) {
+  if (minecpp_rd_varint(r, &p.eid) != MINECPP_BUF_OK) return false;
+  return true;
+}
+
+bool Encode(const MultiBlockChange &p, minecpp_writer_t *w) {
+  minecpp_wr_i32(w, p.chunk_x);
+  minecpp_wr_i32(w, p.chunk_z);
+  minecpp_wr_varint(w, (int32_t)p.records.size());
+  for (const auto &rec : p.records) {
+    minecpp_wr_u16(w, rec.packed);
+    minecpp_wr_varint(w, rec.block_id);
+  }
+  return minecpp_wr_ok(w);
+}
+
+bool Decode(MultiBlockChange &p, minecpp_reader_t *r) {
+  if (minecpp_rd_i32(r, &p.chunk_x) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_i32(r, &p.chunk_z) != MINECPP_BUF_OK) return false;
+  int32_t n = 0;
+  if (minecpp_rd_varint(r, &n) != MINECPP_BUF_OK || n < 0 || n > 4096) return false;
+  p.records.clear();
+  p.records.reserve(n);
+  for (int32_t i = 0; i < n; i++) {
+    MultiBlockChange::Record rec;
+    if (minecpp_rd_u16(r, &rec.packed) != MINECPP_BUF_OK) return false;
+    if (minecpp_rd_varint(r, &rec.block_id) != MINECPP_BUF_OK) return false;
+    p.records.push_back(rec);
+  }
+  return true;
+}
+
+bool Encode(const Explosion &p, minecpp_writer_t *w) {
+  minecpp_wr_f32(w, p.x);
+  minecpp_wr_f32(w, p.y);
+  minecpp_wr_f32(w, p.z);
+  minecpp_wr_f32(w, p.strength);
+  minecpp_wr_varint(w, (int32_t)p.records.size());
+  for (const auto &rec : p.records) {
+    minecpp_wr_u8(w, (uint8_t)rec.dx);
+    minecpp_wr_u8(w, (uint8_t)rec.dy);
+    minecpp_wr_u8(w, (uint8_t)rec.dz);
+  }
+  minecpp_wr_f32(w, p.player_motion_x);
+  minecpp_wr_f32(w, p.player_motion_y);
+  minecpp_wr_f32(w, p.player_motion_z);
+  return minecpp_wr_ok(w);
+}
+
+bool Decode(Explosion &p, minecpp_reader_t *r) {
+  if (minecpp_rd_f32(r, &p.x) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_f32(r, &p.y) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_f32(r, &p.z) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_f32(r, &p.strength) != MINECPP_BUF_OK) return false;
+  int32_t n = 0;
+  if (minecpp_rd_varint(r, &n) != MINECPP_BUF_OK || n < 0 || n > 4096) return false;
+  p.records.clear();
+  p.records.reserve(n);
+  for (int32_t i = 0; i < n; i++) {
+    Explosion::Offset rec;
+    uint8_t dx = 0, dy = 0, dz = 0;
+    if (minecpp_rd_u8(r, &dx) != MINECPP_BUF_OK) return false;
+    if (minecpp_rd_u8(r, &dy) != MINECPP_BUF_OK) return false;
+    if (minecpp_rd_u8(r, &dz) != MINECPP_BUF_OK) return false;
+    rec.dx = (int8_t)dx;
+    rec.dy = (int8_t)dy;
+    rec.dz = (int8_t)dz;
+    p.records.push_back(rec);
+  }
+  if (minecpp_rd_f32(r, &p.player_motion_x) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_f32(r, &p.player_motion_y) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_f32(r, &p.player_motion_z) != MINECPP_BUF_OK) return false;
+  return true;
+}
+
+bool Encode(const Particle &p, minecpp_writer_t *w) {
+  minecpp_wr_varint(w, p.id);
+  minecpp_wr_u8(w, p.long_distance ? 1 : 0);
+  minecpp_wr_f32(w, p.x);
+  minecpp_wr_f32(w, p.y);
+  minecpp_wr_f32(w, p.z);
+  minecpp_wr_f32(w, p.ox);
+  minecpp_wr_f32(w, p.oy);
+  minecpp_wr_f32(w, p.oz);
+  minecpp_wr_f32(w, p.speed);
+  minecpp_wr_varint(w, p.count);
+  for (int32_t d : p.data) {
+    minecpp_wr_varint(w, d);
+  }
+  return minecpp_wr_ok(w);
+}
+
+bool Decode(Particle &p, minecpp_reader_t *r) {
+  if (minecpp_rd_varint(r, &p.id) != MINECPP_BUF_OK) return false;
+  uint8_t ld = 0;
+  if (minecpp_rd_u8(r, &ld) != MINECPP_BUF_OK) return false;
+  p.long_distance = (ld != 0);
+  if (minecpp_rd_f32(r, &p.x) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_f32(r, &p.y) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_f32(r, &p.z) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_f32(r, &p.ox) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_f32(r, &p.oy) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_f32(r, &p.oz) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_f32(r, &p.speed) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_varint(r, &p.count) != MINECPP_BUF_OK) return false;
+  p.data.clear();
+  p.data.reserve(p.count);
+  for (int32_t i = 0; i < p.count; i++) {
+    int32_t d = 0;
+    if (minecpp_rd_varint(r, &d) != MINECPP_BUF_OK) return false;
+    p.data.push_back(d);
+  }
+  return true;
+}
+
+bool Encode(const ChangeGameState &p, minecpp_writer_t *w) {
+  minecpp_wr_u8(w, p.reason);
+  minecpp_wr_f32(w, p.value);
+  return minecpp_wr_ok(w);
+}
+
+bool Decode(ChangeGameState &p, minecpp_reader_t *r) {
+  if (minecpp_rd_u8(r, &p.reason) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_f32(r, &p.value) != MINECPP_BUF_OK) return false;
+  return true;
+}
+
+bool Encode(const SpawnGlobalEntity &p, minecpp_writer_t *w) {
+  minecpp_wr_varint(w, p.eid);
+  minecpp_wr_u8(w, p.type);
+  minecpp_wr_i32(w, p.x);
+  minecpp_wr_i32(w, p.y);
+  minecpp_wr_i32(w, p.z);
+  return minecpp_wr_ok(w);
+}
+
+bool Decode(SpawnGlobalEntity &p, minecpp_reader_t *r) {
+  if (minecpp_rd_varint(r, &p.eid) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_u8(r, &p.type) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_i32(r, &p.x) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_i32(r, &p.y) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_i32(r, &p.z) != MINECPP_BUF_OK) return false;
+  return true;
+}
+
+bool Encode(const UpdateSign &p, minecpp_writer_t *w) {
+  minecpp_wr_i32(w, p.x);
+  minecpp_wr_i32(w, p.y);
+  minecpp_wr_i32(w, p.z);
+  for (int i = 0; i < 4; i++) {
+    minecpp_wr_strn(w, p.lines[i].data(), p.lines[i].size());
+  }
+  return minecpp_wr_ok(w);
+}
+
+bool Decode(UpdateSign &p, minecpp_reader_t *r) {
+  if (minecpp_rd_i32(r, &p.x) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_i32(r, &p.y) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_i32(r, &p.z) != MINECPP_BUF_OK) return false;
+  for (int i = 0; i < 4; i++) {
+    char *s = nullptr;
+    if (minecpp_rd_string(r, 15, &s, nullptr) != MINECPP_BUF_OK) return false;
+    p.lines[i] = s;
+    free(s);
+  }
+  return true;
+}
+
+bool Encode(const UpdateBlockEntity &p, minecpp_writer_t *w) {
+  minecpp_wr_i32(w, p.x);
+  minecpp_wr_i32(w, p.y);
+  minecpp_wr_i32(w, p.z);
+  minecpp_wr_u8(w, p.action);
+  // NBT encoding seria aqui - por enquanto placeholder
+  minecpp_wr_u8(w, 0);  // tag end
+  return minecpp_wr_ok(w);
+}
+
+bool Decode(UpdateBlockEntity &p, minecpp_reader_t *r) {
+  if (minecpp_rd_i32(r, &p.x) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_i32(r, &p.y) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_i32(r, &p.z) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_u8(r, &p.action) != MINECPP_BUF_OK) return false;
+  // NBT decoding seria aqui - por enquanto pula
+  uint8_t tag = 0;
+  if (minecpp_rd_u8(r, &tag) != MINECPP_BUF_OK) return false;
+  return true;
+}
+
+bool Encode(const SignEditorOpen &p, minecpp_writer_t *w) {
+  minecpp_wr_i32(w, p.x);
+  minecpp_wr_i32(w, p.y);
+  minecpp_wr_i32(w, p.z);
+  return minecpp_wr_ok(w);
+}
+
+bool Decode(SignEditorOpen &p, minecpp_reader_t *r) {
+  if (minecpp_rd_i32(r, &p.x) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_i32(r, &p.y) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_i32(r, &p.z) != MINECPP_BUF_OK) return false;
+  return true;
+}
+
+bool Encode(const CombatEvent &p, minecpp_writer_t *w) {
+  minecpp_wr_varint(w, p.event);
+  if (p.event == 1) {  // end combat
+    minecpp_wr_varint(w, p.duration);
+    minecpp_wr_varint(w, p.entity_id);
+  } else if (p.event == 2) {  // entity dead
+    minecpp_wr_varint(w, p.player_id);
+    minecpp_wr_varint(w, p.entity_id);
+    minecpp_wr_strn(w, p.death_message.data(), p.death_message.size());
+  }
+  return minecpp_wr_ok(w);
+}
+
+bool Decode(CombatEvent &p, minecpp_reader_t *r) {
+  if (minecpp_rd_varint(r, &p.event) != MINECPP_BUF_OK) return false;
+  if (p.event == 1) {  // end combat
+    if (minecpp_rd_varint(r, &p.duration) != MINECPP_BUF_OK) return false;
+    if (minecpp_rd_varint(r, &p.entity_id) != MINECPP_BUF_OK) return false;
+  } else if (p.event == 2) {  // entity dead
+    if (minecpp_rd_varint(r, &p.player_id) != MINECPP_BUF_OK) return false;
+    if (minecpp_rd_varint(r, &p.entity_id) != MINECPP_BUF_OK) return false;
+    char *s = nullptr;
+    if (minecpp_rd_string(r, 256, &s, nullptr) != MINECPP_BUF_OK) return false;
+    p.death_message = s;
+    free(s);
+  }
+  return true;
+}
+
+// ---- P1 faltando: Serverbound encode/decode ----
+
+bool Encode(const EntityAction &p, minecpp_writer_t *w) {
+  minecpp_wr_varint(w, p.eid);
+  minecpp_wr_varint(w, p.action);
+  minecpp_wr_varint(w, p.jump_boost);
+  return minecpp_wr_ok(w);
+}
+
+bool Decode(EntityAction &p, minecpp_reader_t *r) {
+  if (minecpp_rd_varint(r, &p.eid) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_varint(r, &p.action) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_varint(r, &p.jump_boost) != MINECPP_BUF_OK) return false;
+  return true;
+}
+
+bool Encode(const SteerVehicle &p, minecpp_writer_t *w) {
+  minecpp_wr_f32(w, p.sideways);
+  minecpp_wr_f32(w, p.forward);
+  minecpp_wr_u8(w, p.flags);
+  return minecpp_wr_ok(w);
+}
+
+bool Decode(SteerVehicle &p, minecpp_reader_t *r) {
+  if (minecpp_rd_f32(r, &p.sideways) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_f32(r, &p.forward) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_u8(r, &p.flags) != MINECPP_BUF_OK) return false;
+  return true;
+}
+
+bool Encode(const EnchantItem &p, minecpp_writer_t *w) {
+  minecpp_wr_u8(w, p.window);
+  minecpp_wr_u8(w, p.enchantment);
+  return minecpp_wr_ok(w);
+}
+
+bool Decode(EnchantItem &p, minecpp_reader_t *r) {
+  if (minecpp_rd_u8(r, &p.window) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_u8(r, &p.enchantment) != MINECPP_BUF_OK) return false;
+  return true;
+}
+
+bool Encode(const SbUpdateSign &p, minecpp_writer_t *w) {
+  minecpp_wr_i32(w, p.x);
+  minecpp_wr_i32(w, p.y);
+  minecpp_wr_i32(w, p.z);
+  for (int i = 0; i < 4; i++) {
+    minecpp_wr_strn(w, p.lines[i].data(), p.lines[i].size());
+  }
+  return minecpp_wr_ok(w);
+}
+
+bool Decode(SbUpdateSign &p, minecpp_reader_t *r) {
+  if (minecpp_rd_i32(r, &p.x) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_i32(r, &p.y) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_i32(r, &p.z) != MINECPP_BUF_OK) return false;
+  for (int i = 0; i < 4; i++) {
+    char *s = nullptr;
+    if (minecpp_rd_string(r, 15, &s, nullptr) != MINECPP_BUF_OK) return false;
+    p.lines[i] = s;
+    free(s);
+  }
+  return true;
+}
+
+bool Encode(const SbPlayerAbilities &p, minecpp_writer_t *w) {
+  minecpp_wr_u8(w, p.flags);
+  minecpp_wr_f32(w, p.fly_speed);
+  minecpp_wr_f32(w, p.walk_speed);
+  return minecpp_wr_ok(w);
+}
+
+bool Decode(SbPlayerAbilities &p, minecpp_reader_t *r) {
+  if (minecpp_rd_u8(r, &p.flags) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_f32(r, &p.fly_speed) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_f32(r, &p.walk_speed) != MINECPP_BUF_OK) return false;
+  return true;
+}
+
+bool Encode(const ClientSettings &p, minecpp_writer_t *w) {
+  minecpp_wr_strn(w, p.locale.data(), p.locale.size());
+  minecpp_wr_u8(w, p.view_distance);
+  minecpp_wr_varint(w, p.chat_mode);
+  minecpp_wr_u8(w, p.chat_colors ? 1 : 0);
+  minecpp_wr_u8(w, p.skin_parts);
+  minecpp_wr_varint(w, p.main_hand);
+  return minecpp_wr_ok(w);
+}
+
+bool Decode(ClientSettings &p, minecpp_reader_t *r) {
+  char *s = nullptr;
+  if (minecpp_rd_string(r, 16, &s, nullptr) != MINECPP_BUF_OK) return false;
+  p.locale = s;
+  free(s);
+  if (minecpp_rd_u8(r, &p.view_distance) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_varint(r, &p.chat_mode) != MINECPP_BUF_OK) return false;
+  uint8_t cc = 0;
+  if (minecpp_rd_u8(r, &cc) != MINECPP_BUF_OK) return false;
+  p.chat_colors = (cc != 0);
+  if (minecpp_rd_u8(r, &p.skin_parts) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_varint(r, &p.main_hand) != MINECPP_BUF_OK) return false;
+  return true;
+}
+
+bool Encode(const ClientStatus &p, minecpp_writer_t *w) {
+  minecpp_wr_varint(w, p.action);
+  return minecpp_wr_ok(w);
+}
+
+bool Decode(ClientStatus &p, minecpp_reader_t *r) {
+  if (minecpp_rd_varint(r, &p.action) != MINECPP_BUF_OK) return false;
+  return true;
+}
+
 }  // namespace minecpp::v18::proto
