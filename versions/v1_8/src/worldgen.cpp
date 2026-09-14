@@ -432,8 +432,8 @@ void WorldGenerator::GenerateStronghold(Chunk *c) {
   }
 }
 
-// ---- Noise helpers ----
-int32_t WorldGenerator::noise2d(int x, int z, double scale, int octaves) {
+// ---- Noise helpers (free functions in namespace) ----
+static int32_t noise2d(int x, int z, double scale, int octaves) {
   double value = 0;
   double amplitude = 1.0;
   double frequency = scale;
@@ -469,8 +469,17 @@ int32_t WorldGenerator::noise2d(int x, int z, double scale, int octaves) {
   return (int32_t)(value / max * 2147483647);
 }
 
-float WorldGenerator::biome_noise(int x, int z, double scale) {
+static float biome_noise(int x, int z, double scale) {
   return noise2d(x, z, scale, 2) / 2147483647.0f;
+}
+
+// Member wrappers
+int32_t WorldGenerator::noise2d(int x, int z, double scale, int octaves) {
+  return ::minecpp::v18::worldgen::noise2d(x, z, scale, octaves);
+}
+
+float WorldGenerator::biome_noise(int x, int z, double scale) {
+  return ::minecpp::v18::worldgen::biome_noise(x, z, scale);
 }
 
 // ---- Convenience function for chunk jobs ----
@@ -481,6 +490,308 @@ void GenerateChunk(int32_t cx, int32_t cz, int64_t seed, Chunk *c) {
   c->x = cx;
   c->z = cz;
   gen.GenerateChunk(c);
+}
+
+// ---- Nether Generation (dimension -1) ----
+
+void GenerateNetherChunk(int32_t cx, int32_t cz, int64_t seed, Chunk *c) {
+  if (!c) return;
+  c->x = cx;
+  c->z = cz;
+
+  JavaRandom rng(seed + (((int64_t)cx << 32) ^ (cz & 0xFFFFFFFF)));
+  // Nether: bedrock roof and floor, netherrack, soul sand, glowstone, lava seas
+
+  // Bedrock ceiling (y=127) and floor (y=0)
+  for (int x = 0; x < 16; x++) {
+    for (int z = 0; z < 16; z++) {
+      BlockSet(c, x, 0, z, 7, 0);      // bedrock floor
+      BlockSet(c, x, 127, z, 7, 0);    // bedrock ceiling
+    }
+  }
+
+  // Main netherrack generation with noise
+  for (int x = 0; x < 16; x++) {
+    for (int z = 0; z < 16; z++) {
+      double nx = (cx * 16 + x) / 80.0;
+      double nz = (cz * 16 + z) / 80.0;
+      double h = noise2d((int)(nx * 100), (int)(nz * 100), 0.01, 3) * 20;
+      int height = 64 + (int)h;  // Nether "sea level" around y=64
+      height = height < 2 ? 2 : (height > 126 ? 126 : height);
+
+      c->heightmap[HeightIndex(x, z)] = height;
+
+      for (int y = 1; y <= height; y++) {
+        int32_t id = 0;
+        if (y <= 4) {
+          id = 87;  // netherrack
+        } else if (y <= height - 2) {
+          id = 87;  // netherrack
+        } else {
+          id = 87;  // netherrack
+        }
+        if (id != 0) BlockSet(c, x, y, z, id, 0);
+      }
+    }
+  }
+
+  // Soul sand patches (near lava level)
+  for (int i = 0; i < 10; i++) {
+    int x = rng.NextInt(16);
+    int z = rng.NextInt(16);
+    int y = rng.NextInt(10) + 30;
+    for (int dx = -2; dx <= 2; dx++) {
+      for (int dz = -2; dz <= 2; dz++) {
+        int bx = x + dx, bz = z + dz;
+        if (bx >= 0 && bx < 16 && bz >= 0 && bz < 16) {
+          int32_t existing = 0;
+          BlockGet(c, bx, y, bz, &existing);
+          if (existing == 87 && rng.NextInt(3) == 0) {
+            BlockSet(c, bx, y, bz, 88, 0);  // soul sand
+          }
+        }
+      }
+    }
+  }
+
+  // Glowstone clusters (on ceiling)
+  for (int i = 0; i < 8; i++) {
+    int x = rng.NextInt(16);
+    int z = rng.NextInt(16);
+    int y = 120 + rng.NextInt(6);
+    if (y > 126) y = 126;
+    int size = rng.NextInt(4) + 1;
+    for (int j = 0; j < size; j++) {
+      int bx = x + rng.NextInt(3) - 1;
+      int bz = z + rng.NextInt(3) - 1;
+      int by = y + rng.NextInt(2);
+      if (bx >= 0 && bx < 16 && bz >= 0 && bz < 16 && by > 0 && by < 127) {
+        int32_t existing = 0;
+        BlockGet(c, bx, by, bz, &existing);
+        if (existing == 0) BlockSet(c, bx, by, bz, 89, 0);  // glowstone
+      }
+    }
+  }
+
+  // Nether quartz ore
+  for (int i = 0; i < 16; i++) {
+    int x = rng.NextInt(16);
+    int z = rng.NextInt(16);
+    int y = rng.NextInt(100) + 10;
+    int size = rng.NextInt(8) + 1;
+    for (int j = 0; j < size; j++) {
+      int bx = x + rng.NextInt(3) - 1;
+      int by = y + rng.NextInt(3) - 1;
+      int bz = z + rng.NextInt(3) - 1;
+      if (bx >= 0 && bx < 16 && bz >= 0 && bz < 16 && by > 0 && by < 127) {
+        int32_t existing = 0;
+        BlockGet(c, bx, by, bz, &existing);
+        if (existing == 87) BlockSet(c, bx, by, bz, 153, 0);  // nether quartz ore
+      }
+    }
+  }
+
+  // Lava seas (y=30-35)
+  for (int x = 0; x < 16; x++) {
+    for (int z = 0; z < 16; z++) {
+      double nx = (cx * 16 + x) / 40.0;
+      double nz = (cz * 16 + z) / 40.0;
+      double n = noise2d((int)(nx * 100), (int)(nz * 100), 0.02, 2);
+      if (n > 0.6) {
+        for (int y = 30; y <= 35; y++) {
+          int32_t existing = 0;
+          BlockGet(c, x, y, z, &existing);
+          if (existing == 87 || existing == 0) BlockSet(c, x, y, z, 10, 0);  // lava
+        }
+      }
+    }
+  }
+
+  // Nether fortress (simplified - bridge corridors)
+  int64_t h = ((int64_t)cx << 32) ^ (cz & 0xFFFFFFFF) ^ 0xF0F7E55;
+  JavaRandom fort_rng(h);
+  if (fort_rng.NextInt(8) == 0) {
+    int fx = rng.NextInt(16);
+    int fz = rng.NextInt(16);
+    int fy = rng.NextInt(40) + 40;
+    int len = rng.NextInt(30) + 20;
+    int dir = rng.NextInt(4);
+    int dx = (dir == 0) ? 1 : (dir == 1) ? -1 : 0;
+    int dz = (dir == 2) ? 1 : (dir == 3) ? -1 : 0;
+
+    for (int i = 0; i < len; i++) {
+      if (fx >= 0 && fx < 16 && fz >= 0 && fz < 16 && fy > 0 && fy < 127) {
+        // 3x3 bridge with nether brick
+        for (int ddx = -1; ddx <= 1; ddx++) {
+          for (int ddz = -1; ddz <= 1; ddz++) {
+            int bx = fx + ddx, bz = fz + ddz;
+            if (bx >= 0 && bx < 16 && bz >= 0 && bz < 16) {
+              BlockSet(c, bx, fy, bz, 112, 0);  // nether brick
+              BlockSet(c, bx, fy + 1, bz, 0, 0);
+              BlockSet(c, bx, fy + 2, bz, 0, 0);
+              if (i % 5 == 0 && ddx == 0 && ddz == 0) {
+                BlockSet(c, bx, fy + 1, bz, 112, 0);  // support pillar
+                BlockSet(c, bx, fy + 2, bz, 112, 0);
+              }
+            }
+          }
+        }
+      }
+      fx += dx;
+      fz += dz;
+    }
+  }
+
+  c->terrain_populated = true;
+  c->has_biomes = true;
+  memset(c->biomes, kHell, 256);
+}
+
+// ---- End Generation (dimension 1) ----
+
+void GenerateEndChunk(int32_t cx, int32_t cz, int64_t seed, Chunk *c) {
+  if (!c) return;
+  c->x = cx;
+  c->z = cz;
+
+  JavaRandom rng(seed + (((int64_t)cx << 32) ^ (cz & 0xFFFFFFFF)) + 1);
+
+  // End: floating islands of end stone, obsidian pillars at center, end cities far out
+  double dist_from_center = sqrt((double)cx * cx + (double)cz * cz);
+
+  // Main island (center 8x8 chunks)
+  bool is_main_island = (cx >= -4 && cx <= 3 && cz >= -4 && cz <= 3);
+
+  if (is_main_island) {
+    // Large central island
+    for (int x = 0; x < 16; x++) {
+      for (int z = 0; z < 16; z++) {
+        double gx = cx * 16 + x;
+        double gz = cz * 16 + z;
+        double d = sqrt(gx * gx + gz * gz);
+        double h = 0;
+
+        if (d < 40) {
+          h = 60 + noise2d((int)(gx * 2), (int)(gz * 2), 0.05, 3) * 10;
+        } else if (d < 80) {
+          h = 40 + noise2d((int)(gx * 2), (int)(gz * 2), 0.05, 3) * 8;
+        } else {
+          h = 20 + noise2d((int)(gx * 2), (int)(gz * 2), 0.05, 3) * 5;
+        }
+
+        int height = (int)h;
+        height = height < 1 ? 1 : (height > 255 ? 255 : height);
+        c->heightmap[HeightIndex(x, z)] = height;
+
+        for (int y = 0; y <= height; y++) {
+          int32_t id = 0;
+          if (y == 0) {
+            id = 7;  // bedrock at very bottom
+          } else if (y <= 3) {
+            id = 121;  // end stone
+          } else {
+            id = 121;  // end stone
+          }
+          if (id != 0) BlockSet(c, x, y, z, id, 0);
+        }
+      }
+    }
+
+    // Obsidian pillars at (0,0) area
+    if (cx == 0 && cz == 0) {
+      for (int i = 0; i < 10; i++) {
+        int px = rng.NextInt(16);
+        int pz = rng.NextInt(16);
+        int h = c->heightmap[HeightIndex(px, pz)];
+        for (int y = h + 1; y < h + 20 + rng.NextInt(20); y++) {
+          if (y < 255) BlockSet(c, px, y, pz, 49, 0);  // obsidian
+        }
+        // End crystal on top
+        if (h + 20 + rng.NextInt(20) < 255) {
+          // Note: end crystal is an entity, not a block
+        }
+      }
+
+      // Bedrock portal (exit portal) at center
+      for (int dx = -2; dx <= 2; dx++) {
+        for (int dz = -2; dz <= 2; dz++) {
+          int bx = 7 + dx, bz = 7 + dz;
+          if (bx >= 0 && bx < 16 && bz >= 0 && bz < 16) {
+            BlockSet(c, bx, 63, bz, 7, 0);  // bedrock
+            if (dx == 0 && dz == 0) BlockSet(c, bx, 64, bz, 122, 0); // end portal
+          }
+        }
+      }
+    }
+  } else if (dist_from_center > 1000) {
+    // Outer islands - end cities
+    if (rng.NextInt(20) == 0) {
+      // Generate end city structure
+      int cx_city = rng.NextInt(16);
+      int cz_city = rng.NextInt(16);
+      int base_y = 40 + rng.NextInt(30);
+
+      // Tower base
+      for (int dx = -4; dx <= 4; dx++) {
+        for (int dz = -4; dz <= 4; dz++) {
+          int bx = cx_city + dx, bz = cz_city + dz;
+          if (bx >= 0 && bx < 16 && bz >= 0 && bz < 16) {
+            BlockSet(c, bx, base_y, bz, 206, 0);  // purpur block
+            BlockSet(c, bx, base_y + 1, bz, 206, 0);
+          }
+        }
+      }
+
+      // Tower
+      for (int dy = 0; dy < 30; dy++) {
+        int size = 4 - dy / 8;
+        if (size < 1) size = 1;
+        for (int dx = -size; dx <= size; dx++) {
+          for (int dz = -size; dz <= size; dz++) {
+            int bx = cx_city + dx, bz = cz_city + dz, by = base_y + 2 + dy;
+            if (bx >= 0 && bx < 16 && bz >= 0 && bz < 16 && by < 255) {
+              if (dx == -size || dx == size || dz == -size || dz == size) {
+                BlockSet(c, bx, by, bz, 206, 0);  // purpur block walls
+              }
+            }
+          }
+        }
+      }
+
+      // End ship (rare)
+      if (rng.NextInt(10) == 0) {
+        int sx = cx_city + 15;
+        int sz = cz_city + 15;
+        if (sx < 16 && sz < 16) {
+          for (int dx = 0; dx < 10; dx++) {
+            for (int dz = -2; dz <= 2; dz++) {
+              int bx = sx + dx, bz = sz + dz, by = base_y + 5;
+              if (bx < 16 && bz >= 0 && bz < 16 && by < 255) {
+                BlockSet(c, bx, by, bz, 206, 0);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Chorus plants on outer islands
+  if (dist_from_center > 500 && rng.NextInt(5) == 0) {
+    for (int i = 0; i < 5; i++) {
+      int x = rng.NextInt(16);
+      int z = rng.NextInt(16);
+      int y = 50 + rng.NextInt(50);
+      for (int dy = 0; dy < 10 + rng.NextInt(10); dy++) {
+        int by = y + dy;
+        if (by < 255) BlockSet(c, x, by, z, 208, 0);  // chorus plant
+      }
+    }
+  }
+
+  c->terrain_populated = true;
+  c->has_biomes = true;
+  memset(c->biomes, kSky, 256);
 }
 
 }  // namespace minecpp::v18::worldgen

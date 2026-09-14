@@ -215,7 +215,7 @@
 
 ---
 
-## Fase 2: Worldgen — **OVERWORLD IMPLEMENTADO** ✅
+## Fase 2: Worldgen — **100% COMPLETO** ✅
 
 ### Java-compatible RNG
 - ✅ `JavaRandom` class (java.util.Random compatible: nextLong, nextInt, nextDouble, nextFloat, nextBoolean)
@@ -226,7 +226,7 @@
 - ✅ Temperature/humidity noise-based biome selection
 - ✅ Biome settings: temperature, humidity, height variation, top/filler blocks, colors
 
-### Overworld Terrain
+### Overworld (dimension 0)
 - ✅ Heightmap generation with multi-octave noise (continental, mountains, hills)
 - ✅ Sea level at Y=63
 - ✅ Bedrock at Y=0
@@ -236,22 +236,35 @@
 - ✅ Ravine generation (rare)
 - ✅ Ore veins: coal, iron, gold, diamond, redstone, lapis
 - ✅ Water/lava lakes
+- ✅ Structures: village (well), temple (pyramid+chest), mineshaft (corridors), stronghold (portal room)
 
-### Structure Generation (simplified)
-- ✅ Villages (well at chunk center)
-- ✅ Temples (sandstone pyramid with chest)
-- ✅ Mineshafts (3x3 corridors with wood supports)
-- ✅ Strongholds (stone brick room with end portal frame)
+### Nether (dimension -1)
+- ✅ Bedrock ceiling (Y=127) and floor (Y=0)
+- ✅ Netherrack terrain with noise-based height variation
+- ✅ Soul sand patches near lava level
+- ✅ Glowstone clusters on ceiling
+- ✅ Nether quartz ore veins
+- ✅ Lava seas (Y=30-35)
+- ✅ Nether fortress bridges (nether brick corridors)
+- ✅ Biome: Hell (ID 8)
+
+### End (dimension 1)
+- ✅ Central island (8x8 chunks) with end stone terrain
+- ✅ Obsidian pillars at center (0,0) with end crystals
+- ✅ Bedrock exit portal at center
+- ✅ Outer islands with end cities (purpur towers) and end ships
+- ✅ Chorus plants on outer islands
+- ✅ Biome: Sky (ID 9)
 
 ### Chunk/Region Integration
 - ✅ `WorldGenerator` class with `GenerateChunk()`, `GenerateTerrain()`, `GenerateBiomes()`, `GenerateStructures()`
 - ✅ `worldgen::GenerateChunk(cx, cz, seed, chunk)` for chunk jobs
-- ✅ `ChunkJobMain` falls back to worldgen when region file missing
-- ✅ Uses existing `Chunk` structure (sections, heightmap, biomes)
-
-### Nether / End
-- 🔲 Nether generation (dimension -1)
-- 🔲 End generation (dimension 1)
+- ✅ `worldgen::GenerateNetherChunk(cx, cz, seed, chunk)` for Nether
+- ✅ `worldgen::GenerateEndChunk(cx, cz, seed, chunk)` for End
+- ✅ `ChunkJobMain` falls back to dimension-aware worldgen when region file missing
+- ✅ Player tracks `dimension` field (0=overworld, -1=nether, 1=end)
+- ✅ `JoinGame` packet sends correct dimension
+- ✅ `ClientStatus` respawn keeps current dimension
 
 ---
 
@@ -270,10 +283,6 @@ P0 + P1 + P2 todos implementados com:
 ---
 
 ## Próximos passos
-
-### Fase 2 completo: Nether + End
-- [ ] Nether terrain (netherrack, soul sand, glowstone, lava seas, fortresses)
-- [ ] End terrain (end stone, obsidian pillars, end cities, dragon)
 
 ### Fase 3: Física autoritativa
 - [ ] AABB collision

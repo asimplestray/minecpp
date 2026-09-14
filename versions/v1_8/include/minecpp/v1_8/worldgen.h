@@ -162,4 +162,8 @@ class WorldGenerator {
 // Função de conveniência para chunk jobs
 void GenerateChunk(int32_t cx, int32_t cz, int64_t seed, Chunk *c);
 
+// Dimension-specific generation
+void GenerateNetherChunk(int32_t cx, int32_t cz, int64_t seed, Chunk *c);
+void GenerateEndChunk(int32_t cx, int32_t cz, int64_t seed, Chunk *c);
+
 }  // namespace minecpp::v18::worldgen

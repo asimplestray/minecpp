@@ -66,6 +66,7 @@ struct Player {
   float yaw = 0, pitch = 0;
   bool on_ground = false;
   int32_t eid = 0;
+  int32_t dimension = 0;  // 0=overworld, -1=nether, 1=end
   std::unordered_set<int64_t> loaded, inflight;
   int32_t keepalive_id = 0;
   bool keepalive_pending = false;
@@ -269,6 +270,7 @@ struct ChunkJob {
   std::string region_dir;
   uint32_t conn = 0;
   int32_t cx = 0, cz = 0;
+  int32_t dimension = 0;  // 0=overworld, -1=nether, 1=end
   minecpp_mqueue_t *reply = nullptr;  // tick_q
 };
 

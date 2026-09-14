@@ -448,7 +448,7 @@ void Server::OnJoin(Player &p) {
   JoinGame j;
   j.eid = p.eid;
   j.mode = 0;
-  j.dimension = 0;
+  j.dimension = p.dimension;
   j.difficulty = 1;
   j.max_players = (uint8_t)(cfg_.max_players > 255 ? 255 : cfg_.max_players);
   j.level_type = "flat";
@@ -571,6 +571,7 @@ void Server::SubmitChunkJob(Player &p, int32_t cx, int32_t cz) {
   job->conn = p.conn;
   job->cx = cx;
   job->cz = cz;
+  job->dimension = p.dimension;
   job->reply = tick_q_;
   if (minecpp_job_submit(0, ChunkJobMain, job) != 0) {
     delete job;
@@ -2290,8 +2291,34 @@ void Server::HandleClientSettings(Player &p, const proto::ClientSettings &c) {
 
 void Server::HandleClientStatus(Player &p, const proto::ClientStatus &c) {
   if (c.action == 0) {
-    // Respawn
-    SendRespawn(p, 0, cfg_.world_dir.empty() ? 0 : 1, 0, "default");
+    // Respawn - keep current dimension
+    int spawn_x = 0, spawn_y = 64, spawn_z = 0;
+    std::string level_type = "default";
+    if (p.dimension == -1) {
+      spawn_y = 64;  // Nether spawn height
+      level_type = "hell";
+    } else if (p.dimension == 1) {
+      spawn_y = 100;  // End spawn height
+      level_type = "end";
+    } else {
+      spawn_x = SpawnX();
+      spawn_y = SpawnY();
+      spawn_z = SpawnZ();
+    }
+    SendRespawn(p, p.dimension, cfg_.world_dir.empty() ? 0 : 1, 0, level_type);
+    // Teleport to spawn position
+    p.x = spawn_x + 0.5;
+    p.y = spawn_y;
+    p.z = spawn_z + 0.5;
+    PlayerPosLook pl;
+    pl.x = p.x;
+    pl.y = p.y;
+    pl.z = p.z;
+    pl.yaw = 0;
+    pl.pitch = 0;
+    pl.flags = 0;
+    const std::vector<uint8_t> pb = Enc(pl);
+    Send(p.conn, proto::kCbPlayerPosLook, pb.data(), pb.size());
   } else if (c.action == 1) {
     // Request stats
     // TODO: send statistics
@@ -3041,11 +3068,18 @@ void ChunkJobMain(void *arg) {
     free(pay);
     minecpp_region_close(rg);
   }
-  // Se não carregou do disco, gera novo chunk (worldgen)
+  // Se não carregou do disco, gera novo chunk (worldgen) baseado na dimensão
   if (!loaded) {
     Chunk *c = ChunkCreate(job->cx, job->cz);
     if (c) {
-      worldgen::GenerateChunk(job->cx, job->cz, 0xDEADBEEF, c);  // seed fixo por enquanto
+      int64_t seed = 0xDEADBEEF + job->dimension * 0x1000000LL;
+      if (job->dimension == -1) {
+        worldgen::GenerateNetherChunk(job->cx, job->cz, seed, c);
+      } else if (job->dimension == 1) {
+        worldgen::GenerateEndChunk(job->cx, job->cz, seed, c);
+      } else {
+        worldgen::GenerateChunk(job->cx, job->cz, seed, c);
+      }
       m->chunk = c;
       m->missing = false;
     }
