@@ -1,6 +1,7 @@
 add_library(minecpp_v1_8 STATIC
   src/version.cpp
   src/chunk.cpp
+  src/worldgen.cpp
   src/protocol.cpp
   src/server.cpp
   src/net_thread.cpp

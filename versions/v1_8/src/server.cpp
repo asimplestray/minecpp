@@ -13,6 +13,7 @@
 #include "minecpp/core/thread_pool.h"
 #include "minecpp/v1_8/chunk.h"
 #include "minecpp/v1_8/protocol.h"
+#include "minecpp/v1_8/worldgen.h"
 
 namespace minecpp::v18 {
 namespace {
@@ -3011,6 +3012,7 @@ void ChunkJobMain(void *arg) {
   snprintf(path, sizeof path, "%s/r.%d.%d.mca", job->region_dir.c_str(), rx,
            rz);
   minecpp_region_t *rg = minecpp_region_open(path, 0, nullptr);
+  bool loaded = false;
   if (rg) {
     uint8_t ver = 0, *pay = nullptr;
     size_t plen = 0;
@@ -3027,6 +3029,7 @@ void ChunkJobMain(void *arg) {
           if (c && ChunkFromRoot(c, root) == 0) {
             m->chunk = c;  // ownership p/ tick (World adota)
             m->missing = false;
+            loaded = true;
           } else {
             ChunkFree(c);
           }
@@ -3037,6 +3040,15 @@ void ChunkJobMain(void *arg) {
     }
     free(pay);
     minecpp_region_close(rg);
+  }
+  // Se não carregou do disco, gera novo chunk (worldgen)
+  if (!loaded) {
+    Chunk *c = ChunkCreate(job->cx, job->cz);
+    if (c) {
+      worldgen::GenerateChunk(job->cx, job->cz, 0xDEADBEEF, c);  // seed fixo por enquanto
+      m->chunk = c;
+      m->missing = false;
+    }
   }
   minecpp_mqueue_push(job->reply, m);  // SEMPRE responde (destrava inflight)
 }

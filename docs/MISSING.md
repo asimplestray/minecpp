@@ -213,13 +213,45 @@
 - ✅ `HandleTabComplete(Player&, SbTabComplete)` — P2
 - ✅ `HandleResourcePackStatus(Player&, ResourcePackStatus)` — P2
 
-### Lógica de jogo (Fases 2-7) — PRÓXIMOS PASSOS
-- [ ] **Fase 2**: Worldgen (Overworld/Nether/End, seed Java, biomas, estruturas)
-- [ ] **Fase 3**: Física autoritativa (AABB, gravidade, água/lava, explosões, anti-fly)
-- [ ] **Fase 4**: ~200 blocos (redstone, pistões, fornalha, portas, trilhos, TNT, cultivos, etc.)
-- [ ] **Fase 5**: ~30 mobs + IA (pathfinding, ataque, creeper, enderman, Dragon, projéteis, veículos)
-- [ ] **Fase 6**: Gameplay (fome, combate 1.8, encantos, poções, sono, vilas, conquistas, gamerules)
-- [ ] **Fase 7**: Admin (~30 comandos, ops/bans, RCON, playerdata NBT, persistência total)
+---
+
+## Fase 2: Worldgen — **OVERWORLD IMPLEMENTADO** ✅
+
+### Java-compatible RNG
+- ✅ `JavaRandom` class (java.util.Random compatible: nextLong, nextInt, nextDouble, nextFloat, nextBoolean)
+- ✅ Seed mixing: `(seed ^ 0x5DEECE66DL) & 0xFFFFFFFFFFFFL`
+
+### Biome Generation
+- ✅ 40 biomes implemented (vanilla 1.8 IDs 0-39)
+- ✅ Temperature/humidity noise-based biome selection
+- ✅ Biome settings: temperature, humidity, height variation, top/filler blocks, colors
+
+### Overworld Terrain
+- ✅ Heightmap generation with multi-octave noise (continental, mountains, hills)
+- ✅ Sea level at Y=63
+- ✅ Bedrock at Y=0
+- ✅ Stone/dirt/grass layers
+- ✅ Biome-specific top blocks (sand, mycelium, etc.)
+- ✅ Cave carving (noise-based)
+- ✅ Ravine generation (rare)
+- ✅ Ore veins: coal, iron, gold, diamond, redstone, lapis
+- ✅ Water/lava lakes
+
+### Structure Generation (simplified)
+- ✅ Villages (well at chunk center)
+- ✅ Temples (sandstone pyramid with chest)
+- ✅ Mineshafts (3x3 corridors with wood supports)
+- ✅ Strongholds (stone brick room with end portal frame)
+
+### Chunk/Region Integration
+- ✅ `WorldGenerator` class with `GenerateChunk()`, `GenerateTerrain()`, `GenerateBiomes()`, `GenerateStructures()`
+- ✅ `worldgen::GenerateChunk(cx, cz, seed, chunk)` for chunk jobs
+- ✅ `ChunkJobMain` falls back to worldgen when region file missing
+- ✅ Uses existing `Chunk` structure (sections, heightmap, biomes)
+
+### Nether / End
+- 🔲 Nether generation (dimension -1)
+- 🔲 End generation (dimension 1)
 
 ---
 
@@ -235,4 +267,38 @@ P0 + P1 + P2 todos implementados com:
 - [x] Build Release + ASan limpo
 - [x] Cliente vanilla 1.8 conecta, vê HUD correto, joga survival básico
 
-**Próximo**: Fase 2 — Worldgen
+---
+
+## Próximos passos
+
+### Fase 2 completo: Nether + End
+- [ ] Nether terrain (netherrack, soul sand, glowstone, lava seas, fortresses)
+- [ ] End terrain (end stone, obsidian pillars, end cities, dragon)
+
+### Fase 3: Física autoritativa
+- [ ] AABB collision
+- [ ] Gravidade, água/lava physics
+- [ ] Anti-fly/anti-cheat
+- [ ] Explosions (TNT, creepers)
+
+### Fase 4: ~200 blocos
+- [ ] Redstone, pistões, fornalha, portas, trilhos
+- [ ] TNT, cultivos, camas, portais
+- [ ] Tile entities (baús, fornalhas, hoppers, etc.)
+
+### Fase 5: ~30 mobs + IA
+- [ ] Pathfinding (A*)
+- [ ] Hostile mobs (creeper, skeleton, zombie, spider, enderman, dragon)
+- [ ] Passive mobs breeding
+- [ ] Projectiles (arrows, fireballs, snowballs)
+- [ ] Vehicles (boats, minecarts)
+
+### Fase 6: Gameplay
+- [ ] Fome, sprint, crouch
+- [ ] Combate 1.8 (cooldown, knockback, sweep)
+- [ ] Encantamentos, poções, beacons
+- [ ] Sono, vilas, conquistas, gamerules
+
+### Fase 7: Admin
+- [ ] ~30 comandos (tp, give, gamemode, ban, op, etc.)
+- [ ] RCON, playerdata NBT, persistência total
