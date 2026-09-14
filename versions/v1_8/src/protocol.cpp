@@ -2072,4 +2072,301 @@ bool Decode(ClientStatus &p, minecpp_reader_t *r) {
   return true;
 }
 
+// ---- P2: Clientbound encode/decode ----
+
+bool Encode(const MapData &p, minecpp_writer_t *w) {
+  minecpp_wr_varint(w, p.map_id);
+  minecpp_wr_u8(w, p.scale);
+  minecpp_wr_varint(w, (int32_t)p.icons.size());
+  for (int32_t icon : p.icons) {
+    minecpp_wr_varint(w, icon);
+  }
+  minecpp_wr_varint(w, p.columns);
+  minecpp_wr_varint(w, p.rows);
+  minecpp_wr_i32(w, p.x);
+  minecpp_wr_i32(w, p.z);
+  minecpp_wr_varint(w, (int32_t)p.data.size());
+  for (uint8_t b : p.data) {
+    minecpp_wr_u8(w, b);
+  }
+  return minecpp_wr_ok(w);
+}
+
+bool Decode(MapData &p, minecpp_reader_t *r) {
+  if (minecpp_rd_varint(r, &p.map_id) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_u8(r, &p.scale) != MINECPP_BUF_OK) return false;
+  int32_t n = 0;
+  if (minecpp_rd_varint(r, &n) != MINECPP_BUF_OK || n < 0 || n > 256) return false;
+  p.icons.clear();
+  p.icons.reserve(n);
+  for (int32_t i = 0; i < n; i++) {
+    int32_t icon = 0;
+    if (minecpp_rd_varint(r, &icon) != MINECPP_BUF_OK) return false;
+    p.icons.push_back(icon);
+  }
+  if (minecpp_rd_varint(r, &p.columns) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_varint(r, &p.rows) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_i32(r, &p.x) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_i32(r, &p.z) != MINECPP_BUF_OK) return false;
+  int32_t dlen = 0;
+  if (minecpp_rd_varint(r, &dlen) != MINECPP_BUF_OK || dlen < 0 || dlen > 16384) return false;
+  p.data.resize(dlen);
+  for (int32_t i = 0; i < dlen; i++) {
+    uint8_t b = 0;
+    if (minecpp_rd_u8(r, &b) != MINECPP_BUF_OK) return false;
+    p.data[i] = b;
+  }
+  return true;
+}
+
+bool Encode(const CbTabComplete &p, minecpp_writer_t *w) {
+  minecpp_wr_varint(w, (int32_t)p.matches.size());
+  for (const auto &s : p.matches) {
+    minecpp_wr_strn(w, s.data(), s.size());
+  }
+  return minecpp_wr_ok(w);
+}
+
+bool Decode(CbTabComplete &p, minecpp_reader_t *r) {
+  int32_t n = 0;
+  if (minecpp_rd_varint(r, &n) != MINECPP_BUF_OK || n < 0 || n > 100) return false;
+  p.matches.clear();
+  p.matches.reserve(n);
+  for (int32_t i = 0; i < n; i++) {
+    char *s = nullptr;
+    if (minecpp_rd_string(r, 256, &s, nullptr) != MINECPP_BUF_OK) return false;
+    p.matches.push_back(s);
+    free(s);
+  }
+  return true;
+}
+
+bool Encode(const ScoreboardObjective &p, minecpp_writer_t *w) {
+  minecpp_wr_strn(w, p.name.data(), p.name.size());
+  minecpp_wr_strn(w, p.value.data(), p.value.size());
+  minecpp_wr_u8(w, p.action);
+  return minecpp_wr_ok(w);
+}
+
+bool Decode(ScoreboardObjective &p, minecpp_reader_t *r) {
+  char *s = nullptr;
+  if (minecpp_rd_string(r, 16, &s, nullptr) != MINECPP_BUF_OK) return false;
+  p.name = s;
+  free(s);
+  if (minecpp_rd_string(r, 32, &s, nullptr) != MINECPP_BUF_OK) return false;
+  p.value = s;
+  free(s);
+  if (minecpp_rd_u8(r, &p.action) != MINECPP_BUF_OK) return false;
+  return true;
+}
+
+bool Encode(const UpdateScore &p, minecpp_writer_t *w) {
+  minecpp_wr_strn(w, p.name.data(), p.name.size());
+  minecpp_wr_u8(w, p.action);
+  minecpp_wr_strn(w, p.objective.data(), p.objective.size());
+  if (p.action == 0) {
+    minecpp_wr_varint(w, p.value);
+  }
+  return minecpp_wr_ok(w);
+}
+
+bool Decode(UpdateScore &p, minecpp_reader_t *r) {
+  char *s = nullptr;
+  if (minecpp_rd_string(r, 40, &s, nullptr) != MINECPP_BUF_OK) return false;
+  p.name = s;
+  free(s);
+  if (minecpp_rd_u8(r, &p.action) != MINECPP_BUF_OK) return false;
+  if (minecpp_rd_string(r, 16, &s, nullptr) != MINECPP_BUF_OK) return false;
+  p.objective = s;
+  free(s);
+  if (p.action == 0) {
+    if (minecpp_rd_varint(r, &p.value) != MINECPP_BUF_OK) return false;
+  }
+  return true;
+}
+
+bool Encode(const DisplayScoreboard &p, minecpp_writer_t *w) {
+  minecpp_wr_u8(w, p.position);
+  minecpp_wr_strn(w, p.name.data(), p.name.size());
+  return minecpp_wr_ok(w);
+}
+
+bool Decode(DisplayScoreboard &p, minecpp_reader_t *r) {
+  if (minecpp_rd_u8(r, &p.position) != MINECPP_BUF_OK) return false;
+  char *s = nullptr;
+  if (minecpp_rd_string(r, 16, &s, nullptr) != MINECPP_BUF_OK) return false;
+  p.name = s;
+  free(s);
+  return true;
+}
+
+bool Encode(const Teams &p, minecpp_writer_t *w) {
+  minecpp_wr_strn(w, p.name.data(), p.name.size());
+  minecpp_wr_u8(w, p.mode);
+  if (p.mode == 0 || p.mode == 2) {  // create or update
+    minecpp_wr_strn(w, p.display_name.data(), p.display_name.size());
+    minecpp_wr_strn(w, p.prefix.data(), p.prefix.size());
+    minecpp_wr_strn(w, p.suffix.data(), p.suffix.size());
+    minecpp_wr_u8(w, p.friendly_fire);
+    minecpp_wr_u8(w, p.name_tag_visibility);
+    minecpp_wr_u8(w, p.color);
+  }
+  if (p.mode == 0 || p.mode == 3 || p.mode == 4) {  // create, add players, remove players
+    minecpp_wr_varint(w, (int32_t)p.players.size());
+    for (const auto &pl : p.players) {
+      minecpp_wr_strn(w, pl.data(), pl.size());
+    }
+  }
+  return minecpp_wr_ok(w);
+}
+
+bool Decode(Teams &p, minecpp_reader_t *r) {
+  char *s = nullptr;
+  if (minecpp_rd_string(r, 16, &s, nullptr) != MINECPP_BUF_OK) return false;
+  p.name = s;
+  free(s);
+  if (minecpp_rd_u8(r, &p.mode) != MINECPP_BUF_OK) return false;
+  if (p.mode == 0 || p.mode == 2) {
+    if (minecpp_rd_string(r, 32, &s, nullptr) != MINECPP_BUF_OK) return false;
+    p.display_name = s;
+    free(s);
+    if (minecpp_rd_string(r, 16, &s, nullptr) != MINECPP_BUF_OK) return false;
+    p.prefix = s;
+    free(s);
+    if (minecpp_rd_string(r, 16, &s, nullptr) != MINECPP_BUF_OK) return false;
+    p.suffix = s;
+    free(s);
+    if (minecpp_rd_u8(r, &p.friendly_fire) != MINECPP_BUF_OK) return false;
+    if (minecpp_rd_u8(r, &p.name_tag_visibility) != MINECPP_BUF_OK) return false;
+    if (minecpp_rd_u8(r, &p.color) != MINECPP_BUF_OK) return false;
+  }
+  if (p.mode == 0 || p.mode == 3 || p.mode == 4) {
+    int32_t n = 0;
+    if (minecpp_rd_varint(r, &n) != MINECPP_BUF_OK || n < 0 || n > 200) return false;
+    p.players.clear();
+    p.players.reserve(n);
+    for (int32_t i = 0; i < n; i++) {
+      if (minecpp_rd_string(r, 16, &s, nullptr) != MINECPP_BUF_OK) return false;
+      p.players.push_back(s);
+      free(s);
+    }
+  }
+  return true;
+}
+
+bool Encode(const Camera &p, minecpp_writer_t *w) {
+  minecpp_wr_varint(w, p.entity_id);
+  return minecpp_wr_ok(w);
+}
+
+bool Decode(Camera &p, minecpp_reader_t *r) {
+  if (minecpp_rd_varint(r, &p.entity_id) != MINECPP_BUF_OK) return false;
+  return true;
+}
+
+bool Encode(const Title &p, minecpp_writer_t *w) {
+  minecpp_wr_varint(w, p.action);
+  if (p.action == 0 || p.action == 1) {  // title or subtitle
+    minecpp_wr_strn(w, p.text.data(), p.text.size());
+  } else if (p.action == 2) {  // times
+    minecpp_wr_i32(w, p.fade_in);
+    minecpp_wr_i32(w, p.stay);
+    minecpp_wr_i32(w, p.fade_out);
+  }
+  return minecpp_wr_ok(w);
+}
+
+bool Decode(Title &p, minecpp_reader_t *r) {
+  if (minecpp_rd_varint(r, &p.action) != MINECPP_BUF_OK) return false;
+  if (p.action == 0 || p.action == 1) {
+    char *s = nullptr;
+    if (minecpp_rd_string(r, 256, &s, nullptr) != MINECPP_BUF_OK) return false;
+    p.text = s;
+    free(s);
+  } else if (p.action == 2) {
+    if (minecpp_rd_i32(r, &p.fade_in) != MINECPP_BUF_OK) return false;
+    if (minecpp_rd_i32(r, &p.stay) != MINECPP_BUF_OK) return false;
+    if (minecpp_rd_i32(r, &p.fade_out) != MINECPP_BUF_OK) return false;
+  }
+  return true;
+}
+
+bool Encode(const PlayerListHeaderFooter &p, minecpp_writer_t *w) {
+  minecpp_wr_strn(w, p.header.data(), p.header.size());
+  minecpp_wr_strn(w, p.footer.data(), p.footer.size());
+  return minecpp_wr_ok(w);
+}
+
+bool Decode(PlayerListHeaderFooter &p, minecpp_reader_t *r) {
+  char *s = nullptr;
+  if (minecpp_rd_string(r, 256, &s, nullptr) != MINECPP_BUF_OK) return false;
+  p.header = s;
+  free(s);
+  if (minecpp_rd_string(r, 256, &s, nullptr) != MINECPP_BUF_OK) return false;
+  p.footer = s;
+  free(s);
+  return true;
+}
+
+bool Encode(const ResourcePackSend &p, minecpp_writer_t *w) {
+  minecpp_wr_strn(w, p.url.data(), p.url.size());
+  minecpp_wr_strn(w, p.hash.data(), p.hash.size());
+  return minecpp_wr_ok(w);
+}
+
+bool Decode(ResourcePackSend &p, minecpp_reader_t *r) {
+  char *s = nullptr;
+  if (minecpp_rd_string(r, 256, &s, nullptr) != MINECPP_BUF_OK) return false;
+  p.url = s;
+  free(s);
+  if (minecpp_rd_string(r, 40, &s, nullptr) != MINECPP_BUF_OK) return false;
+  p.hash = s;
+  free(s);
+  return true;
+}
+
+// ---- P2: Serverbound encode/decode ----
+
+bool Encode(const SbTabComplete &p, minecpp_writer_t *w) {
+  minecpp_wr_strn(w, p.text.data(), p.text.size());
+  minecpp_wr_u8(w, p.has_position ? 1 : 0);
+  if (p.has_position) {
+    minecpp_wr_i32(w, p.x);
+    minecpp_wr_i32(w, p.y);
+    minecpp_wr_i32(w, p.z);
+  }
+  return minecpp_wr_ok(w);
+}
+
+bool Decode(SbTabComplete &p, minecpp_reader_t *r) {
+  char *s = nullptr;
+  if (minecpp_rd_string(r, 256, &s, nullptr) != MINECPP_BUF_OK) return false;
+  p.text = s;
+  free(s);
+  uint8_t hp = 0;
+  if (minecpp_rd_u8(r, &hp) != MINECPP_BUF_OK) return false;
+  p.has_position = (hp != 0);
+  if (p.has_position) {
+    if (minecpp_rd_i32(r, &p.x) != MINECPP_BUF_OK) return false;
+    if (minecpp_rd_i32(r, &p.y) != MINECPP_BUF_OK) return false;
+    if (minecpp_rd_i32(r, &p.z) != MINECPP_BUF_OK) return false;
+  }
+  return true;
+}
+
+bool Encode(const ResourcePackStatus &p, minecpp_writer_t *w) {
+  minecpp_wr_strn(w, p.hash.data(), p.hash.size());
+  minecpp_wr_varint(w, p.result);
+  return minecpp_wr_ok(w);
+}
+
+bool Decode(ResourcePackStatus &p, minecpp_reader_t *r) {
+  char *s = nullptr;
+  if (minecpp_rd_string(r, 40, &s, nullptr) != MINECPP_BUF_OK) return false;
+  p.hash = s;
+  free(s);
+  if (minecpp_rd_varint(r, &p.result) != MINECPP_BUF_OK) return false;
+  return true;
+}
+
 }  // namespace minecpp::v18::proto

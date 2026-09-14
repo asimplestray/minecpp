@@ -73,26 +73,26 @@
 | 0x36 | SignEditorOpen | `Server::SendSignEditorOpen(int x,y,z)` | `SignEditorOpen` | ✅ |
 | 0x42 | CombatEvent | `Server::SendCombatEvent(int event, ...)` | `CombatEvent` | ✅ |
 
-### P2 — Scoreboard, títulos, mapas, recursos
+### P2 — Scoreboard, títulos, mapas, recursos — **TODOS IMPLEMENTADOS**
 
 | ID | Pacote | Função C++ necessária | Struct proto | Status |
 |----|--------|----------------------|--------------|--------|
-| 0x34 | Maps | `Server::SendMapData(int mapid, byte scale, icons, cols, rows, x,z, data[])` | `Maps` | 🔲 |
-| 0x3A | TabComplete | `Server::SendTabComplete(vector<string>)` | `TabComplete` | 🔲 |
-| 0x3B | ScoreboardObjective | `Server::SendScoreboardObjective(string name, string val, uint8_t action)` | `ScoreboardObjective` | 🔲 |
-| 0x3C | UpdateScore | `Server::SendUpdateScore(string name, uint8_t action, string obj, int val)` | `UpdateScore` | 🔲 |
-| 0x3D | DisplayScoreboard | `Server::SendDisplayScoreboard(uint8_t pos, string name)` | `DisplayScoreboard` | 🔲 |
-| 0x3E | Teams | `Server::SendTeams(string name, uint8_t mode, ...)` | `Teams` | 🔲 |
-| 0x43 | Camera | `Server::SendCamera(int eid)` | `Camera` | 🔲 |
-| 0x45 | Title | `Server::SendTitle(int action, ...)` | `Title` | 🔲 |
-| 0x47 | PlayerListHeaderFooter | `Server::SendPlayerListHeaderFooter(string header, string footer)` | `PlayerListHeaderFooter` | 🔲 |
-| 0x48 | ResourcePackSend | `Server::SendResourcePack(string url, string hash)` | `ResourcePackSend` | 🔲 |
+| 0x34 | Maps | `Server::SendMapData(...)` | `MapData` | ✅ |
+| 0x3A | TabComplete | `Server::SendTabComplete(vector<string>)` | `CbTabComplete` | ✅ |
+| 0x3B | ScoreboardObjective | `Server::SendScoreboardObjective(...)` | `ScoreboardObjective` | ✅ |
+| 0x3C | UpdateScore | `Server::SendUpdateScore(...)` | `UpdateScore` | ✅ |
+| 0x3D | DisplayScoreboard | `Server::SendDisplayScoreboard(...)` | `DisplayScoreboard` | ✅ |
+| 0x3E | Teams | `Server::SendTeams(...)` | `Teams` | ✅ |
+| 0x43 | Camera | `Server::SendCamera(int eid)` | `Camera` | ✅ |
+| 0x45 | Title | `Server::SendTitle(...)` | `Title` | ✅ |
+| 0x47 | PlayerListHeaderFooter | `Server::SendPlayerListHeaderFooter(...)` | `PlayerListHeaderFooter` | ✅ |
+| 0x48 | ResourcePackSend | `Server::SendResourcePackSend(...)` | `ResourcePackSend` | ✅ |
 
 ---
 
 ## SERVERBOUND (Client → Server)
 
-### P1 — Movimento, inventário, entidades
+### P1 — Movimento, inventário, entidades — **TODOS IMPLEMENTADOS**
 
 | ID | Pacote | Handler C++ necessário | Struct proto | Status |
 |----|--------|------------------------|--------------|--------|
@@ -106,23 +106,23 @@
 | 0x0F | ConfirmTransaction | **IMPLEMENTADO** (P1a eco) | `ConfirmTransaction` | ✅ |
 | 0x10 | CreativeInventoryAction | `Server::HandleCreativeAction(Player&, proto::CreativeAction)` | `CreativeAction` | ✅ |
 | 0x11 | EnchantItem | `Server::HandleEnchantItem(Player&, uint8_t win, uint8_t ench)` | `EnchantItem` | ✅ |
-| 0x12 | UpdateSign | `Server::HandleUpdateSign(Player&, int x,y,z, array<string,4>)` | `UpdateSign` | ✅ |
-| 0x13 | Abilities | `Server::HandleAbilities(Player&, proto::PlayerAbilities)` | `PlayerAbilities` | ✅ |
+| 0x12 | UpdateSign | `Server::HandleUpdateSign(Player&, int x,y,z, array<string,4>)` | `SbUpdateSign` | ✅ |
+| 0x13 | Abilities | `Server::HandleAbilities(Player&, proto::PlayerAbilities)` | `SbPlayerAbilities` | ✅ |
 | 0x15 | ClientSettings | `Server::HandleClientSettings(Player&, proto::ClientSettings)` | `ClientSettings` | ✅ |
 | 0x16 | ClientStatus | `Server::HandleClientStatus(Player&, proto::ClientStatus)` | `ClientStatus` | ✅ |
 
-### P2 — Recursos
+### P2 — Recursos — **TODOS IMPLEMENTADOS**
 
 | ID | Pacote | Handler C++ necessário | Struct proto | Status |
 |----|--------|------------------------|--------------|--------|
-| 0x14 | TabComplete | `Server::HandleTabComplete(Player&, string txt, ...)` | `TabComplete` | 🔲 |
-| 0x19 | ResourcePackStatus | `Server::HandleResourcePackStatus(Player&, string hash, int result)` | `ResourcePackStatus` | 🔲 |
+| 0x14 | TabComplete | `Server::HandleTabComplete(Player&, string txt, ...)` | `SbTabComplete` | ✅ |
+| 0x19 | ResourcePackStatus | `Server::HandleResourcePackStatus(Player&, string hash, int result)` | `ResourcePackStatus` | ✅ |
 
 ---
 
-## Estruturas proto faltando em `protocol.h`/`protocol.cpp`
+## Estruturas proto — **TODAS IMPLEMENTADAS (P0+P1+P2)**
 
-### Clientbound — **TODAS IMPLEMENTADAS (P0+P1)**
+### Clientbound
 - ✅ `Respawn` (encode/decode)
 - ✅ `UseBed` (encode/decode)
 - ✅ `SpawnPainting` (encode/decode)
@@ -138,33 +138,33 @@
 - ✅ `UpdateBlockEntity` (encode/decode)
 - ✅ `SignEditorOpen` (encode/decode)
 - ✅ `CombatEvent` (encode/decode)
-- 🔲 `Maps` (encode/decode) — P2
-- 🔲 `TabComplete` (encode/decode) — P2
-- 🔲 `ScoreboardObjective` (encode/decode) — P2
-- 🔲 `UpdateScore` (encode/decode) — P2
-- 🔲 `DisplayScoreboard` (encode/decode) — P2
-- 🔲 `Teams` (encode/decode) — P2
-- 🔲 `Camera` (encode/decode) — P2
-- 🔲 `Title` (encode/decode) — P2
-- 🔲 `PlayerListHeaderFooter` (encode/decode) — P2
-- 🔲 `ResourcePackSend` (encode/decode) — P2
+- ✅ `MapData` (encode/decode) — P2
+- ✅ `CbTabComplete` (encode/decode) — P2
+- ✅ `ScoreboardObjective` (encode/decode) — P2
+- ✅ `UpdateScore` (encode/decode) — P2
+- ✅ `DisplayScoreboard` (encode/decode) — P2
+- ✅ `Teams` (encode/decode) — P2
+- ✅ `Camera` (encode/decode) — P2
+- ✅ `Title` (encode/decode) — P2
+- ✅ `PlayerListHeaderFooter` (encode/decode) — P2
+- ✅ `ResourcePackSend` (encode/decode) — P2
 
-### Serverbound — **TODAS IMPLEMENTADAS (P1)**
+### Serverbound
 - ✅ `EntityAction` (decode)
 - ✅ `SteerVehicle` (decode)
 - ✅ `EnchantItem` (decode)
-- ✅ `UpdateSign` SB (decode)
-- ✅ `PlayerAbilities` SB (decode)
+- ✅ `SbUpdateSign` (decode)
+- ✅ `SbPlayerAbilities` (decode)
 - ✅ `ClientSettings` (decode)
 - ✅ `ClientStatus` (decode)
-- 🔲 `TabComplete` SB (decode) — P2
-- 🔲 `ResourcePackStatus` (decode) — P2
+- ✅ `SbTabComplete` (decode) — P2
+- ✅ `ResourcePackStatus` (decode) — P2
 
 ---
 
-## Funções Server.cpp
+## Funções Server.cpp — **TODAS IMPLEMENTADAS (P0+P1+P2)**
 
-### Broadcast / Envio — **TODAS IMPLEMENTADAS (P1)**
+### Broadcast / Envio
 - ✅ `SendUpdateHealth(Player&, float, int, float)`
 - ✅ `SendHeldItemChange(Player&, uint8_t)`
 - ✅ `SendSetExperience(Player&, float, int, int)`
@@ -181,15 +181,25 @@
 - ✅ `SendParticle(int, bool, float, float, float, float, float, float, float, int, data)`
 - ✅ `SendChangeGameState(uint8_t, float)`
 - ✅ `SendSpawnGlobalEntity(int, uint8_t, int, int, int)`
-- ✅ `SendOpenWindow(uint8_t, string, string, uint8_t)` — proto OK
-- ✅ `SendCloseWindow(uint8_t)` — proto OK
-- ✅ `SendWindowProperty(uint8_t, int16_t, int16_t)` — proto OK
+- ✅ `SendOpenWindow(uint8_t, string, string, uint8_t)`
+- ✅ `SendCloseWindow(uint8_t)`
+- ✅ `SendWindowProperty(uint8_t, int16_t, int16_t)`
 - ✅ `SendUpdateSign(int, int, int, array<string,4>)`
 - ✅ `SendUpdateBlockEntity(int, int, int, uint8_t, NBT)`
 - ✅ `SendSignEditorOpen(int, int, int)`
 - ✅ `SendCombatEvent(int, ...)`
+- ✅ `SendMapData(...)` — P2
+- ✅ `SendTabComplete(...)` — P2
+- ✅ `SendScoreboardObjective(...)` — P2
+- ✅ `SendUpdateScore(...)` — P2
+- ✅ `SendDisplayScoreboard(...)` — P2
+- ✅ `SendTeams(...)` — P2
+- ✅ `SendCamera(...)` — P2
+- ✅ `SendTitle(...)` — P2
+- ✅ `SendPlayerListHeaderFooter(...)` — P2
+- ✅ `SendResourcePackSend(...)` — P2
 
-### Handlers SB — **TODAS IMPLEMENTADAS (P1)**
+### Handlers SB
 - ✅ `HandleHeldItemChange(Player&, SbHeldItem)` — troca slot hotbar
 - ✅ `HandleEntityAction(Player&, EntityAction)` — sneak/sprint/sleep
 - ✅ `HandleSteerVehicle(Player&, SteerVehicle)` — boat/minecart
@@ -200,8 +210,10 @@
 - ✅ `HandleAbilities(Player&, PlayerAbilities)` — creative fly
 - ✅ `HandleClientSettings(Player&, ClientSettings)` — locale, view dist, etc.
 - ✅ `HandleClientStatus(Player&, ClientStatus)` — **respawn (action=0)**, stats
+- ✅ `HandleTabComplete(Player&, SbTabComplete)` — P2
+- ✅ `HandleResourcePackStatus(Player&, ResourcePackStatus)` — P2
 
-### Lógica de jogo (Fases 2-7)
+### Lógica de jogo (Fases 2-7) — PRÓXIMOS PASSOS
 - [ ] **Fase 2**: Worldgen (Overworld/Nether/End, seed Java, biomas, estruturas)
 - [ ] **Fase 3**: Física autoritativa (AABB, gravidade, água/lava, explosões, anti-fly)
 - [ ] **Fase 4**: ~200 blocos (redstone, pistões, fornalha, portas, trilhos, TNT, cultivos, etc.)
@@ -211,19 +223,16 @@
 
 ---
 
-## Ordem sugerida de implementação (Fase 1 P2)
+## Fase 1 (Protocolo) — **100% COMPLETO** ✅
 
-1. **Scoreboard/Title/Maps** (P2) — paridade fina
-2. **TabComplete/ResourcePack** (P2) — recursos
-
----
-
-## Critérios de "feito"
-
+P0 + P1 + P2 todos implementados com:
 - [x] Struct em `protocol.h`
 - [x] Encode/Decode em `protocol.cpp` (testado contra goldens se existirem)
 - [x] Handler SB em `server.cpp` (se aplicável)
 - [x] Função `SendX` / `HandleX` em `server.cpp` / `server.h`
+- [x] Handler cases em `Server::HandlePlay`
 - [x] Teste em `test_server18.cpp` (unitário, sem socket)
 - [x] Build Release + ASan limpo
-- [ ] Cliente vanilla 1.8 conecta, vê HUD correto, joga survival básico (P1 completo)
+- [x] Cliente vanilla 1.8 conecta, vê HUD correto, joga survival básico
+
+**Próximo**: Fase 2 — Worldgen

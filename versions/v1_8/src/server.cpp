@@ -938,6 +938,16 @@ void Server::HandlePlay(Player &p, int32_t id, const uint8_t *d, size_t n) {
       if (Decode(q, &r) && r.left == 0) HandleSteerVehicle(p, q);
       break;
     }
+    case proto::kSbTabComplete: {
+      proto::SbTabComplete q;
+      if (Decode(q, &r) && r.left == 0) HandleTabComplete(p, q);
+      break;
+    }
+    case proto::kSbResourcePackStatus: {
+      proto::ResourcePackStatus q;
+      if (Decode(q, &r) && r.left == 0) HandleResourcePackStatus(p, q);
+      break;
+    }
     default:
       break;  // pacote desconhecido: ignora (contará p/ telemetria futura)
   }
@@ -2287,6 +2297,202 @@ void Server::HandleClientStatus(Player &p, const proto::ClientStatus &c) {
   }
   // action 2 = taking inventory achievement
   (void)p;
+}
+
+// ---- P2: SendX ----
+
+void Server::SendMapData(int32_t map_id, uint8_t scale, const std::vector<int32_t> &icons,
+                         int32_t columns, int32_t rows, int32_t x, int32_t z, const std::vector<uint8_t> &data) {
+  proto::MapData m;
+  m.map_id = map_id;
+  m.scale = scale;
+  m.icons = icons;
+  m.columns = columns;
+  m.rows = rows;
+  m.x = x;
+  m.z = z;
+  m.data = data;
+  minecpp_writer_t w{nullptr, 0, 0, 0};
+  proto::Encode(m, &w);
+  size_t n = 0;
+  uint8_t *buf = minecpp_wr_take(&w, &n);
+  for (auto &kv : players_) {
+    if (kv.second->state == Player::State::Play) {
+      Send(kv.first, proto::kCbMaps, buf, n);
+    }
+  }
+  free(buf);
+}
+
+void Server::SendTabComplete(const std::vector<std::string> &matches) {
+  proto::CbTabComplete t;
+  t.matches = matches;
+  minecpp_writer_t w{nullptr, 0, 0, 0};
+  proto::Encode(t, &w);
+  size_t n = 0;
+  uint8_t *buf = minecpp_wr_take(&w, &n);
+  for (auto &kv : players_) {
+    if (kv.second->state == Player::State::Play) {
+      Send(kv.first, proto::kCbTabComplete, buf, n);
+    }
+  }
+  free(buf);
+}
+
+void Server::SendScoreboardObjective(const std::string &name, const std::string &value, uint8_t action) {
+  proto::ScoreboardObjective s;
+  s.name = name;
+  s.value = value;
+  s.action = action;
+  minecpp_writer_t w{nullptr, 0, 0, 0};
+  proto::Encode(s, &w);
+  size_t n = 0;
+  uint8_t *buf = minecpp_wr_take(&w, &n);
+  for (auto &kv : players_) {
+    if (kv.second->state == Player::State::Play) {
+      Send(kv.first, proto::kCbScoreboardObjective, buf, n);
+    }
+  }
+  free(buf);
+}
+
+void Server::SendUpdateScore(const std::string &name, uint8_t action, const std::string &objective, int32_t value) {
+  proto::UpdateScore u;
+  u.name = name;
+  u.action = action;
+  u.objective = objective;
+  u.value = value;
+  minecpp_writer_t w{nullptr, 0, 0, 0};
+  proto::Encode(u, &w);
+  size_t n = 0;
+  uint8_t *buf = minecpp_wr_take(&w, &n);
+  for (auto &kv : players_) {
+    if (kv.second->state == Player::State::Play) {
+      Send(kv.first, proto::kCbUpdateScore, buf, n);
+    }
+  }
+  free(buf);
+}
+
+void Server::SendDisplayScoreboard(uint8_t position, const std::string &name) {
+  proto::DisplayScoreboard d;
+  d.position = position;
+  d.name = name;
+  minecpp_writer_t w{nullptr, 0, 0, 0};
+  proto::Encode(d, &w);
+  size_t n = 0;
+  uint8_t *buf = minecpp_wr_take(&w, &n);
+  for (auto &kv : players_) {
+    if (kv.second->state == Player::State::Play) {
+      Send(kv.first, proto::kCbDisplayScoreboard, buf, n);
+    }
+  }
+  free(buf);
+}
+
+void Server::SendTeams(const std::string &name, uint8_t mode, const std::string &display_name,
+                       const std::string &prefix, const std::string &suffix,
+                       uint8_t friendly_fire, uint8_t name_tag_visibility, uint8_t color,
+                       const std::vector<std::string> &players) {
+  proto::Teams t;
+  t.name = name;
+  t.mode = mode;
+  t.display_name = display_name;
+  t.prefix = prefix;
+  t.suffix = suffix;
+  t.friendly_fire = friendly_fire;
+  t.name_tag_visibility = name_tag_visibility;
+  t.color = color;
+  t.players = players;
+  minecpp_writer_t w{nullptr, 0, 0, 0};
+  proto::Encode(t, &w);
+  size_t n = 0;
+  uint8_t *buf = minecpp_wr_take(&w, &n);
+  for (auto &kv : players_) {
+    if (kv.second->state == Player::State::Play) {
+      Send(kv.first, proto::kCbTeams, buf, n);
+    }
+  }
+  free(buf);
+}
+
+void Server::SendCamera(int32_t entity_id) {
+  proto::Camera c;
+  c.entity_id = entity_id;
+  minecpp_writer_t w{nullptr, 0, 0, 0};
+  proto::Encode(c, &w);
+  size_t n = 0;
+  uint8_t *buf = minecpp_wr_take(&w, &n);
+  for (auto &kv : players_) {
+    if (kv.second->state == Player::State::Play) {
+      Send(kv.first, proto::kCbCamera, buf, n);
+    }
+  }
+  free(buf);
+}
+
+void Server::SendTitle(int32_t action, const std::string &text, int32_t fade_in, int32_t stay, int32_t fade_out) {
+  proto::Title t;
+  t.action = action;
+  t.text = text;
+  t.fade_in = fade_in;
+  t.stay = stay;
+  t.fade_out = fade_out;
+  minecpp_writer_t w{nullptr, 0, 0, 0};
+  proto::Encode(t, &w);
+  size_t n = 0;
+  uint8_t *buf = minecpp_wr_take(&w, &n);
+  for (auto &kv : players_) {
+    if (kv.second->state == Player::State::Play) {
+      Send(kv.first, proto::kCbTitle, buf, n);
+    }
+  }
+  free(buf);
+}
+
+void Server::SendPlayerListHeaderFooter(const std::string &header, const std::string &footer) {
+  proto::PlayerListHeaderFooter p;
+  p.header = header;
+  p.footer = footer;
+  minecpp_writer_t w{nullptr, 0, 0, 0};
+  proto::Encode(p, &w);
+  size_t n = 0;
+  uint8_t *buf = minecpp_wr_take(&w, &n);
+  for (auto &kv : players_) {
+    if (kv.second->state == Player::State::Play) {
+      Send(kv.first, proto::kCbPlayerListHeaderFooter, buf, n);
+    }
+  }
+  free(buf);
+}
+
+void Server::SendResourcePackSend(const std::string &url, const std::string &hash) {
+  proto::ResourcePackSend r;
+  r.url = url;
+  r.hash = hash;
+  minecpp_writer_t w{nullptr, 0, 0, 0};
+  proto::Encode(r, &w);
+  size_t n = 0;
+  uint8_t *buf = minecpp_wr_take(&w, &n);
+  for (auto &kv : players_) {
+    if (kv.second->state == Player::State::Play) {
+      Send(kv.first, proto::kCbResourcePackSend, buf, n);
+    }
+  }
+  free(buf);
+}
+
+// ---- P2: SB Handlers ----
+
+void Server::HandleTabComplete(Player &p, const proto::SbTabComplete &t) {
+  // Simple tab completion: return empty for now
+  (void)p; (void)t;
+  SendTabComplete({});
+}
+
+void Server::HandleResourcePackStatus(Player &p, const proto::ResourcePackStatus &r) {
+  // Client responded to resource pack
+  (void)p; (void)r;
 }
 
 // ---------------------------------------------------------------- entidades

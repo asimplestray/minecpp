@@ -124,6 +124,17 @@ enum : int32_t {
   kCbUpdateBlockEntity = 0x35,
   kCbSignEditorOpen = 0x36,
   kCbCombatEvent = 0x42,
+  // Play CB P2 (scoreboard, titles, maps, resources)
+  kCbMaps = 0x34,
+  kCbTabComplete = 0x3A,
+  kCbScoreboardObjective = 0x3B,
+  kCbUpdateScore = 0x3C,
+  kCbDisplayScoreboard = 0x3D,
+  kCbTeams = 0x3E,
+  kCbCamera = 0x43,
+  kCbTitle = 0x45,
+  kCbPlayerListHeaderFooter = 0x47,
+  kCbResourcePackSend = 0x48,
   // Play SB P1 faltando
   kSbEntityAction = 0x0B,
   kSbSteerVehicle = 0x0C,
@@ -132,6 +143,9 @@ enum : int32_t {
   kSbPlayerAbilities = 0x13,
   kSbClientSettings = 0x15,
   kSbClientStatus = 0x16,
+  // Play SB P2
+  kSbTabComplete = 0x14,
+  kSbResourcePackStatus = 0x19,
 };
 
 struct Handshake {
@@ -696,6 +710,84 @@ struct ClientStatus {
   int32_t action = 0;  // 0=respawn, 1=request stats, 2=taking inventory achievement
 };
 
+// ---- P2: Scoreboard, Titles, Maps, Resources ----
+
+// Clientbound P2
+struct MapData {
+  int32_t map_id = 0;
+  uint8_t scale = 0;
+  std::vector<int32_t> icons;  // icon data
+  int32_t columns = 0, rows = 0;
+  int32_t x = 0, z = 0;
+  std::vector<uint8_t> data;
+};
+
+struct CbTabComplete {
+  std::vector<std::string> matches;
+};
+
+struct ScoreboardObjective {
+  std::string name;
+  std::string value;  // display name
+  uint8_t action = 0;  // 0=create, 1=remove, 2=update display
+};
+
+struct UpdateScore {
+  std::string name;  // score name (entity name)
+  uint8_t action = 0;  // 0=create/update, 1=remove
+  std::string objective;
+  int32_t value = 0;
+};
+
+struct DisplayScoreboard {
+  uint8_t position = 0;  // 0=list, 1=sidebar, 2=below name
+  std::string name;  // objective name
+};
+
+struct Teams {
+  std::string name;
+  uint8_t mode = 0;  // 0=create, 1=remove, 2=update, 3=add players, 4=remove players
+  std::string display_name;
+  std::string prefix;
+  std::string suffix;
+  uint8_t friendly_fire = 0;
+  uint8_t name_tag_visibility = 0;
+  uint8_t color = 0;
+  std::vector<std::string> players;  // usernames
+};
+
+struct Camera {
+  int32_t entity_id = 0;
+};
+
+struct Title {
+  int32_t action = 0;  // 0=set title, 1=set subtitle, 2=set times, 3=hide, 4=reset
+  std::string text;  // JSON chat for title/subtitle
+  int32_t fade_in = 0, stay = 0, fade_out = 0;  // for action=2
+};
+
+struct PlayerListHeaderFooter {
+  std::string header;
+  std::string footer;
+};
+
+struct ResourcePackSend {
+  std::string url;
+  std::string hash;  // SHA-1
+};
+
+// Serverbound P2
+struct SbTabComplete {
+  std::string text;
+  bool has_position = false;
+  int32_t x = 0, y = 0, z = 0;
+};
+
+struct ResourcePackStatus {
+  std::string hash;
+  int32_t result = 0;  // 0=success, 1=decline, 2=failed download, 3=accepted
+};
+
 bool Encode(const Handshake &, minecpp_writer_t *);
 bool Decode(Handshake &, minecpp_reader_t *);
 bool Encode(const StatusResponse &, minecpp_writer_t *);
@@ -872,6 +964,34 @@ bool Encode(const ClientSettings &, minecpp_writer_t *);
 bool Decode(ClientSettings &, minecpp_reader_t *);
 bool Encode(const ClientStatus &, minecpp_writer_t *);
 bool Decode(ClientStatus &, minecpp_reader_t *);
+
+// P2: Clientbound encode/decode
+bool Encode(const MapData &, minecpp_writer_t *);
+bool Decode(MapData &, minecpp_reader_t *);
+bool Encode(const CbTabComplete &, minecpp_writer_t *);
+bool Decode(CbTabComplete &, minecpp_reader_t *);
+bool Encode(const ScoreboardObjective &, minecpp_writer_t *);
+bool Decode(ScoreboardObjective &, minecpp_reader_t *);
+bool Encode(const UpdateScore &, minecpp_writer_t *);
+bool Decode(UpdateScore &, minecpp_reader_t *);
+bool Encode(const DisplayScoreboard &, minecpp_writer_t *);
+bool Decode(DisplayScoreboard &, minecpp_reader_t *);
+bool Encode(const Teams &, minecpp_writer_t *);
+bool Decode(Teams &, minecpp_reader_t *);
+bool Encode(const Camera &, minecpp_writer_t *);
+bool Decode(Camera &, minecpp_reader_t *);
+bool Encode(const Title &, minecpp_writer_t *);
+bool Decode(Title &, minecpp_reader_t *);
+bool Encode(const PlayerListHeaderFooter &, minecpp_writer_t *);
+bool Decode(PlayerListHeaderFooter &, minecpp_reader_t *);
+bool Encode(const ResourcePackSend &, minecpp_writer_t *);
+bool Decode(ResourcePackSend &, minecpp_reader_t *);
+
+// P2: Serverbound encode/decode
+bool Encode(const SbTabComplete &, minecpp_writer_t *);
+bool Decode(SbTabComplete &, minecpp_reader_t *);
+bool Encode(const ResourcePackStatus &, minecpp_writer_t *);
+bool Decode(ResourcePackStatus &, minecpp_reader_t *);
 
 // Frame sem compressão: varint(len) + varint(id) + payload.
 // Unframe valida teto e devolve id + view do payload (sem cópia).

@@ -230,6 +230,23 @@ class Server {
   void HandleAbilities(Player &p, const proto::SbPlayerAbilities &a);
   void HandleClientSettings(Player &p, const proto::ClientSettings &c);
   void HandleClientStatus(Player &p, const proto::ClientStatus &c);
+  // ---- P2: handlers ----
+  void SendMapData(int32_t map_id, uint8_t scale, const std::vector<int32_t> &icons,
+                   int32_t columns, int32_t rows, int32_t x, int32_t z, const std::vector<uint8_t> &data);
+  void SendTabComplete(const std::vector<std::string> &matches);
+  void SendScoreboardObjective(const std::string &name, const std::string &value, uint8_t action);
+  void SendUpdateScore(const std::string &name, uint8_t action, const std::string &objective, int32_t value);
+  void SendDisplayScoreboard(uint8_t position, const std::string &name);
+  void SendTeams(const std::string &name, uint8_t mode, const std::string &display_name,
+                 const std::string &prefix, const std::string &suffix,
+                 uint8_t friendly_fire, uint8_t name_tag_visibility, uint8_t color,
+                 const std::vector<std::string> &players);
+  void SendCamera(int32_t entity_id);
+  void SendTitle(int32_t action, const std::string &text, int32_t fade_in, int32_t stay, int32_t fade_out);
+  void SendPlayerListHeaderFooter(const std::string &header, const std::string &footer);
+  void SendResourcePackSend(const std::string &url, const std::string &hash);
+  void HandleTabComplete(Player &p, const proto::SbTabComplete &t);
+  void HandleResourcePackStatus(Player &p, const proto::ResourcePackStatus &r);
 
   std::string StatusJson() const;
 
