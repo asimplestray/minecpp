@@ -220,13 +220,22 @@
 - ✅ `ValidatePlayerMovement()` — anti-cheat movement validation
 - ✅ AABB collision com blocos sólidos
 - ✅ Gravidade (0.08/tick, terminal velocity 0.98)
-- ✅ Drag (0.98 horizontal, 0.98 vertical)
+- ✅ Drag (0.98 horizontal/vertical)
 - ✅ Water physics (buoyancy 0.02/tick, drag 0.9)
-- ✅ Lava physics (damage + drag 0.5)
+- ✅ Lava physics (drag 0.5)
 - ✅ Sneak edge protection
-- ✅ `CreateExplosionAt()` — explosões com raycast (TNT, creepers)
+- ✅ `CreateExplosionAt()` — explosões com raycast 16 direções
 - ✅ `ApplyExplosionToEntity()` — knockback de explosão
-- ✅ Integração com `EntityTick()` para itens e mobs
+- ✅ EntityTick integration
+
+### Threading (Core) — **OTIMIZADO PARA 8C/8T + CACHE L2/L3** ✅
+- ✅ **Work-stealing pool** com 3 lanes (P0/P1/P2) e rings de 1024
+- ✅ **Cache-line padding (64B)** em `worker_t`, `job_t`, rings — evita false sharing
+- ✅ **Thread affinity** — `minecpp_thread_set_affinity()` pino workers nos cores 2..N (core 0=tick, 1=net)
+- ✅ **Zero malloc pós-init** — rings pré-alocados, zero pressão no allocator
+- ✅ **Prioridades P0/P1/P2** — chunk load (P1) não compete com worldgen (P2)
+- ✅ **Work-stealing com trylock** — rouba sem invalidar cache do outro core
+- ✅ `minecpp_thread_set_affinity()` / `minecpp_thread_get_affinity()` API portável
 
 ---
 
@@ -263,11 +272,11 @@ P0 + P1 + P2 todos implementados com:
 
 ### End (dimension 1)
 - ✅ Central island, obsidian pillars, end portal
-- ✅ Outer islands with end cities, end ships, chorus plants
+- ✅ Outer islands com end cities, end ships, chorus plants
 
 ### Chunk/Region Integration
 - ✅ `WorldGenerator` class, dimension-aware chunk jobs
-- ✅ Fallback generation when region file missing
+- ✅ Fallback generation quando region file missing
 
 ---
 
@@ -283,7 +292,7 @@ P0 + P1 + P2 todos implementados com:
 
 ---
 
-## Próximos passos
+## Fase 4+ (Próximos)
 
 ### Fase 4: ~200 blocos
 - [ ] Redstone, pistões, fornalha, portas, trilhos

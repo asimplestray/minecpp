@@ -37,6 +37,14 @@ void minecpp_platform_shutdown(void);
 // Numero de threads hardware. Retorna >= 2 sempre (fallback seguro).
 unsigned minecpp_cpu_count(void);
 
+// Seta afinidade da thread atual para um core logico (0..cpu_count-1).
+// Retorna 0 ok, -1 erro (core invalido ou sem permissao).
+int minecpp_thread_set_affinity(unsigned core_id);
+
+// Obtem ID do core logico onde a thread atual esta rodando (Linux: sched_getcpu).
+// Retorna -1 se nao suportado.
+int minecpp_thread_get_affinity(void);
+
 #ifdef __cplusplus
 }
 #endif

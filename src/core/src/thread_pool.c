@@ -2,6 +2,7 @@
 
 #include <stdatomic.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "minecpp/core/platform.h"
 #include "minecpp/core/sync.h"
@@ -12,25 +13,30 @@
 //   (trylock — nunca bloqueia em lock alheio). Espera com timeout 2ms.
 // - Shutdown drena os rings antes de sair (semântica executor shutdown).
 // - Zero malloc após init: rings de tamanho fixo.
+// - Cache-line padding (64B) para evitar false sharing entre workers.
 
 #define MINECPP_LANES 3
 #define MINECPP_RING 1024
 #define MINECPP_IDLE_WAIT_MS 2
 
-typedef struct {
+typedef struct MINECPP_ALIGNAS(64) {
   minecpp_job_fn fn;
   void *ctx;
 } job_t;
 
-typedef struct {
+typedef struct MINECPP_ALIGNAS(64) {
   minecpp_mutex_t mu;
   minecpp_cond_t cv;
-  job_t ring[MINECPP_LANES][MINECPP_RING];
+  // Rings com padding por lane para evitar false sharing
+  job_t ring[MINECPP_LANES][MINECPP_RING] MINECPP_ALIGNAS(64);
   unsigned head[MINECPP_LANES];
-  unsigned count[MINECPP_LANES];
+  unsigned count[MINECPP_LANES] MINECPP_ALIGNAS(64);
   minecpp_thread_t th;
   unsigned idx;
+  unsigned pinned_core;
   _Atomic uint64_t done;
+  // Padding fixo para alinhar a 64 bytes (cache line)
+  char _pad[64];
 } worker_t;
 
 static worker_t *g_w = NULL;
@@ -52,6 +58,10 @@ static int pop_lane(worker_t *w, unsigned lane, job_t *out) {
 
 static void worker_main(void *arg) {
   worker_t *self = (worker_t *)arg;
+  // Seta afinidade logo no inicio da thread
+  if (self->pinned_core != (unsigned)-1) {
+    minecpp_thread_set_affinity(self->pinned_core);
+  }
   for (;;) {
     job_t j;
     int have = 0;
@@ -112,8 +122,10 @@ int minecpp_thread_pool_init(unsigned worker_count) {
   worker_t *w = (worker_t *)calloc(worker_count, sizeof *w);
   if (!w) return -1;
   unsigned i = 0;
+  const unsigned cpu = minecpp_cpu_count();
   for (; i < worker_count; i++) {
     w[i].idx = i;
+    w[i].pinned_core = (cpu >= worker_count) ? (i + 2) % cpu : (unsigned)-1;  // pula core 0 (tick) e 1 (net)
     atomic_init(&w[i].done, 0);
     if (minecpp_mutex_init(&w[i].mu) != 0) break;
     if (minecpp_cond_init(&w[i].cv) != 0) {

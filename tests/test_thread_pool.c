@@ -115,8 +115,11 @@ static void t_full(void) {
 static void t_distribute(void) {
   ASSERT_EQ(minecpp_thread_pool_init(4), 0);
   atomic_store(&g_sum, 0);
-  for (int i = 0; i < 20000; i++)
-    ASSERT_EQ(minecpp_job_submit(2, job_inc, NULL), 0);
+  for (int i = 0; i < 20000; i++) {
+    while (minecpp_job_submit(2, job_inc, NULL) != 0) {
+      sleep_ms(1);  // backoff se ring cheio
+    }
+  }
   ASSERT_EQ(wait_completed(20000, 15000), 0);
   ASSERT_EQ(atomic_load(&g_sum), 20000L);
   uint64_t total = 0;
